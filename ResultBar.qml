@@ -1,11 +1,15 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Particles
+import QtQuick.Effects
 import graphical
 
 Rectangle {
 	id: root
 	required property PointProcessing backend
+
+	clip: true
 
 	function statusColor(): string {
 		switch (backend.progress) {
@@ -43,6 +47,69 @@ Rectangle {
 				return "Best fit: " + root.backend.resultEquation
 			default:
 				return ""
+		}
+	}
+
+	Item {
+		anchors.fill: parent
+		clip: true
+
+		layer.enabled: true
+		layer.effect: MultiEffect {
+			blurEnabled: true
+			blur: 1
+			blurMultiplier: 2.5
+		}
+
+		ParticleSystem {
+			id: particleSystem
+			anchors.fill: parent
+			running: true
+		}
+
+		ImageParticle {
+			system: particleSystem
+			source: "qrc:///particleresources/fuzzydot.png"
+			alpha: 0.05
+			alphaVariation: 0.1
+			color: Qt.lighter(root.statusColor())
+			entryEffect: ImageParticle.Fade
+		}
+
+		Emitter {
+			id: particleEmitter
+			system: particleSystem
+			anchors.fill: parent
+
+			readonly property bool processing: root.backend.progress === PointProcessing.PROCESSING
+
+			emitRate: processing ? 10 : 5
+			lifeSpan: processing ? 1800 : 4000
+			lifeSpanVariation: processing ? 600 : 1500
+
+			velocity: AngleDirection {
+				angle: 0
+				angleVariation: 360
+				magnitude: particleEmitter.processing ? 55 : 6
+				magnitudeVariation: particleEmitter.processing ? 30 : 4
+			}
+
+			size: 100
+			sizeVariation: 10
+			endSize: 0
+		}
+	}
+
+	Rectangle {
+		anchors.fill: parent
+		gradient: Gradient {
+			orientation: Gradient.Horizontal
+			GradientStop {
+				position: 0.0; color: Qt.darker(root.statusColor())
+			}
+			GradientStop {
+				position: 1.0; color: "transparent"
+			}
 		}
 	}
 
