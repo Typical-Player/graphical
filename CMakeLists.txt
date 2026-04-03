@@ -20,6 +20,7 @@ qt_add_qml_module(appgraphical
         URI graphical
         QML_FILES
         Main.qml
+        utils.mjs
         SOURCES
         pointprocessing.cpp
         pointprocessing.h
