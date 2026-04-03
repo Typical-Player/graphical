@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>drag.svg</file>
+        <file>freedraw.svg</file>
+        <file>logo.svg</file>
+        <file>recenter.svg</file>
+        <file>clear.svg</file>
+    </qresource>
+</RCC>

@@ -10,12 +10,26 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	connect(_worker, &workerprocessing::canceled, this, &pointprocessing::onWorkerCanceled);
 	connect(_worker, &workerprocessing::error, this, &pointprocessing::onWorkerError);
 
+	_series = new QScatterSeries(this);
+	_debounceTimer = new QTimer(this);
+	_debounceTimer->setInterval(500);
+	_debounceTimer->setSingleShot(true);
+
+	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
+	connect(_series, &QScatterSeries::pointAdded, this, &pointprocessing::onDataChanged);
+	connect(_series, &QScatterSeries::pointRemoved, this, &pointprocessing::onDataChanged);
+	connect(this, &pointprocessing::plotTypeChanged, this, &pointprocessing::onDataChanged);
+
+	connect(_debounceTimer, &QTimer::timeout, this, &pointprocessing::fireWorker);
+
 	_workerThread->start();
 }
 
 pointprocessing::~pointprocessing() {
+	_worker->requestCancellation();
 	_workerThread->quit();
 	_workerThread->wait();
+	delete _worker;
 }
 
 qint64 pointprocessing::error() const {
@@ -30,20 +44,8 @@ QString pointprocessing::resultEquation() const {
 	return _resultEquation;
 }
 
-QScatterSeries* pointprocessing::series() const {
+QScatterSeries* pointprocessing::pointSeries() const {
 	return _series;
-}
-
-void pointprocessing::setSeries(QScatterSeries* scatterSeries) {
-	if (_series) disconnect(_series, nullptr, this, nullptr);
-
-	_series = scatterSeries;
-
-	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
-	connect(_series, &QScatterSeries::pointAdded, this, &pointprocessing::onDataChanged);
-	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
-
-	emit seriesChanged();
 }
 
 pointprocessing::PlotType pointprocessing::plotType() const {
@@ -57,64 +59,58 @@ void pointprocessing::setPlotType(const PlotType plotType) {
 	emit plotTypeChanged();
 }
 
-void pointprocessing::processPlot() {
-	if (!_series) return;
+void pointprocessing::onWorkerFinished(const Result& result) {
+	_error = result.error;
+	_resultEquation = result.eqRes;
 
-	if (_progress == PROCESSING) {
+	if (_pendingRestart) {
+		_pendingRestart = false;
+		_debounceTimer->start();
+		return;
+	}
+
+	if (_debounceTimer->isActive()) return;
+
+	emit errorChanged();
+	emit resultEquationChanged();
+	setProgress(READY);
+}
+
+void pointprocessing::onWorkerError(const QString& err) {
+	qWarning() << "WORKER ERROR: " << err;
+	setProgress(ERROR);
+}
+
+void pointprocessing::onWorkerCanceled() {
+	if (_pendingRestart || _debounceTimer->isActive()) {
+		_pendingRestart = false;
+		_debounceTimer->start();
+		return;
+	}
+	setProgress(CANCELED);
+}
+
+void pointprocessing::onDataChanged() {
+	if (progress() == PROCESSING) {
 		_pendingRestart = true;
 		_worker->requestCancellation();
 		return;
 	}
 
-	fireWorker();
-}
-
-void pointprocessing::requestCancel() {
-	if (_progress != PROCESSING) return;
-
-	_pendingRestart = false;
-	_worker->requestCancellation();
-}
-
-void pointprocessing::onWorkerFinished(const Result& result) {
-	if (_error != result.error) {
-		_error = result.error;
-		emit errorChanged();
-	}
-
-	if (_resultEquation != result.eqRes) {
-		_resultEquation = result.eqRes;
-		emit resultEquationChanged();
-	}
-
-	_progress = READY;
-	emit progressChanged();
-}
-
-void pointprocessing::onWorkerError(const QString& err) {
-	qWarning() << "WORKER ERROR: " << err;
-	_progress = ERROR;
-	emit progressChanged();
-}
-
-void pointprocessing::onWorkerCanceled() {
-	_progress = CANCELED;
-	emit progressChanged();
-
-	if (_pendingRestart) fireWorker();
-}
-
-void pointprocessing::onDataChanged() {
-	if (_progress != PROCESSING) return;
-	_pendingRestart = true;
-	_worker->requestCancellation();
+	setProgress(PROCESSING);
+	_debounceTimer->start();
 }
 
 void pointprocessing::fireWorker() {
 	_pendingRestart = false;
-	_progress = PROCESSING;
-	emit progressChanged();
+	setProgress(PROCESSING);
 
-	auto points = _series->points();
-	emit requestRun(points, _plotType);
+	emit requestRun(_series->points(), _plotType);
+}
+
+void pointprocessing::setProgress(Progress progress) {
+	if (_progress == progress) return;
+	
+	_progress = progress;
+	emit progressChanged();
 }

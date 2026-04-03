@@ -4,11 +4,19 @@ project(graphical VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Graphs)
+set(QT_QML_GENERATE_QMLLS_INI ON)
+
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Quick Graphs Svg)
 
 qt_standard_project_setup(REQUIRES 6.10)
+qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(appgraphical
+        assets/assets.qrc
         main.cpp
         workerprocessing.cpp
         workerprocessing.h
@@ -20,6 +28,10 @@ qt_add_qml_module(appgraphical
         URI graphical
         QML_FILES
         Main.qml
+        Graph.qml
+        ResultBar.qml
+        TopToolbar.qml
+        AboutDialog.qml
         utils.mjs
         SOURCES
         pointprocessing.cpp
@@ -40,6 +52,7 @@ set_target_properties(appgraphical PROPERTIES
 target_link_libraries(appgraphical
         PRIVATE Qt6::Quick
         PRIVATE Qt6::Graphs
+        PRIVATE Qt6::Svg
 )
 
 install(TARGETS appgraphical
