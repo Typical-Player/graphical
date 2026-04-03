@@ -1,12 +1,12 @@
 #ifndef GRAPHICAL_POINTPROCESSING_H
 #define GRAPHICAL_POINTPROCESSING_H
 
-#include <QObject>
 #include <QtQmlIntegration/qqmlintegration.h>
 #include <QScatterSeries>
 #include <QThread>
+#include "result.h"
 
-#include "workerprocessing.h"
+class workerprocessing;
 
 class pointprocessing : public QObject {
 	Q_OBJECT
@@ -73,7 +73,7 @@ signals:
 	void plotTypeChanged();
 	void resultEquationChanged();
 
-	void requestRun(const QList<QPointF>& points, int plotType);
+	void requestRun(const QList<QPointF>& points, PlotType plotType);
 
 private:
 	void fireWorker();

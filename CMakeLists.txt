@@ -13,6 +13,7 @@ qt_add_executable(appgraphical
         workerprocessing.cpp
         workerprocessing.h
         result.h
+        matrix.h
 )
 
 qt_add_qml_module(appgraphical

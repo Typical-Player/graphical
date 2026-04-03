@@ -1,11 +1,9 @@
 #ifndef GRAPHICAL_WORKERPROCESSING_H
 #define GRAPHICAL_WORKERPROCESSING_H
 
-#include <QObject>
-#include <qqmlintegration.h>
-#include <QPointF>
-
+#include "matrix.h"
 #include "result.h"
+#include "pointprocessing.h"
 
 class workerprocessing : public QObject {
 	Q_OBJECT
@@ -15,7 +13,7 @@ public:
 	void requestCancellation();
 
 public slots:
-	void run(const QList<QPointF>& points, int plotType);
+	void run(const QList<QPointF>& points, pointprocessing::PlotType plotType);
 
 signals:
 	void finished(const Result& result);
@@ -24,6 +22,14 @@ signals:
 
 private:
 	[[nodiscard]] bool isCanceled() const;
+
+	void fitLinear(const QList<QPointF>& points, Result& result, bool& ok);
+	void fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok);
+	void fitExponential(const QList<QPointF>& points, Result& result, bool& ok);
+
+	static void compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
+	                    pointprocessing::PlotType plotType);
+	[[nodiscard]] static QList<double> solve(const g_matrix<double>& X, const QList<double>& Y);
 
 	QAtomicInt _canceled{0};
 };

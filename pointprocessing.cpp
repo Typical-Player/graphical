@@ -1,4 +1,5 @@
 #include "pointprocessing.h"
+#include "workerprocessing.h"
 
 pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_workerThread = new QThread(this);
@@ -115,5 +116,5 @@ void pointprocessing::fireWorker() {
 	emit progressChanged();
 
 	auto points = _series->points();
-	emit requestRun(points, static_cast<int>(_plotType));
+	emit requestRun(points, _plotType);
 }
