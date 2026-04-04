@@ -11,6 +11,13 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	connect(_worker, &workerprocessing::error, this, &pointprocessing::onWorkerError);
 
 	_series = new QScatterSeries(this);
+	_fitSeries = new QLineSeries(this);
+
+	_fitSeries->setStrokeStyle(QLineSeries::StrokeStyle::DashLine);
+	QColor color;
+	color.setRgb(0, 0, 0);
+	_fitSeries->setColor(color);
+
 	_debounceTimer = new QTimer(this);
 	_debounceTimer->setInterval(500);
 	_debounceTimer->setSingleShot(true);
@@ -22,6 +29,10 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 
 	connect(_debounceTimer, &QTimer::timeout, this, &pointprocessing::fireWorker);
 
+	connect(this, &pointprocessing::fitSamplesChanged, this, [this]() {
+		this->updateFitRange(_lastXMin, _lastXMax);
+	});
+
 	_workerThread->start();
 }
 
@@ -32,7 +43,7 @@ pointprocessing::~pointprocessing() {
 	delete _worker;
 }
 
-qint64 pointprocessing::error() const {
+QString pointprocessing::error() const {
 	return _error;
 }
 
@@ -48,6 +59,10 @@ QScatterSeries* pointprocessing::pointSeries() const {
 	return _series;
 }
 
+QLineSeries* pointprocessing::fitSeries() const {
+	return _fitSeries;
+}
+
 pointprocessing::PlotType pointprocessing::plotType() const {
 	return _plotType;
 }
@@ -59,8 +74,31 @@ void pointprocessing::setPlotType(const PlotType plotType) {
 	emit plotTypeChanged();
 }
 
+qint64 pointprocessing::fitSamples() const {
+	return _fitSamples;
+}
+
+void pointprocessing::setFitSamples(const qint64 fitSamples) {
+	if (_fitSamples == fitSamples) return;
+
+	_fitSamples = fitSamples;
+	emit fitSamplesChanged();
+}
+
+void pointprocessing::updateFitRange(const double xMin, const double xMax) {
+	_lastXMin = xMin;
+	_lastXMax = xMax;
+
+	if (_progress != READY) return;
+	resampleFitSeries(xMin, xMax);
+}
+
+void pointprocessing::clear() const {
+	_fitSeries->clear();
+	_series->clear();
+}
+
 void pointprocessing::onWorkerFinished(const Result& result) {
-	_error = result.error;
 	_resultEquation = result.eqRes;
 
 	if (_pendingRestart) {
@@ -71,6 +109,11 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 
 	if (_debounceTimer->isActive()) return;
 
+	_bA = result.betaA;
+	_bB = result.betaB;
+	_bC = result.betaC;
+
+	resampleFitSeries(_lastXMin, _lastXMax);
 	emit errorChanged();
 	emit resultEquationChanged();
 	setProgress(READY);
@@ -78,6 +121,8 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 
 void pointprocessing::onWorkerError(const QString& err) {
 	qWarning() << "WORKER ERROR: " << err;
+	_fitSeries->clear();
+	_error = err;
 	setProgress(ERROR);
 }
 
@@ -108,9 +153,33 @@ void pointprocessing::fireWorker() {
 	emit requestRun(_series->points(), _plotType);
 }
 
-void pointprocessing::setProgress(Progress progress) {
+void pointprocessing::setProgress(const Progress progress) {
 	if (_progress == progress) return;
-	
+
 	_progress = progress;
 	emit progressChanged();
+}
+
+void pointprocessing::resampleFitSeries(const double xMin, const double xMax) const {
+	QList<QPointF> points;
+	points.reserve(_fitSamples + 1);
+
+	const double step = (xMax - xMin) / static_cast<double>(_fitSamples);
+
+	for (int i = 0; i <= _fitSamples; ++i) {
+		double x = xMin + i * step;
+		double y = 0;
+		switch (_plotType) {
+		case LINEAL: y = _bA + _bB * x;
+			break;
+		case CUADRATIC: y = _bA + _bB * x + _bC * x * x;
+			break;
+		case EXPONENTIAL: y = _bA * std::exp(_bB * x);
+			break;
+		}
+
+		points.append({x, y});
+	}
+
+	_fitSeries->replace(points);
 }

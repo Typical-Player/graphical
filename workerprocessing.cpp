@@ -129,7 +129,11 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
                                const pointprocessing::PlotType plotType) {
 	const auto n = points.size();
 	double sumY = 0;
-	for (const QPointF& p : points) sumY += p.y();
+
+	for (const QPointF& p : points) {
+		sumY += p.y();
+	}
+
 	const double meanY = sumY / static_cast<double>(n);
 
 	double sse = 0, sst = 0;
@@ -157,6 +161,8 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 		               .arg(beta[1], 0, 'f', 4)
 		               .arg(beta[0], 0, 'f', 4)
 		               .arg(r2, 0, 'f', 4);
+		result.betaA = beta[0];
+		result.betaB = beta[1];
 		break;
 	case 1:
 		result.eqRes = QString("y = %1x² + %2x + %3  (R²=%4)")
@@ -164,12 +170,17 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 		               .arg(beta[1], 0, 'f', 4)
 		               .arg(beta[0], 0, 'f', 4)
 		               .arg(r2, 0, 'f', 4);
+		result.betaA = beta[0];
+		result.betaB = beta[1];
+		result.betaC = beta[2];
 		break;
 	case 2:
 		result.eqRes = QString("y = %1·e^(%2x)  (R²=%3)")
 		               .arg(beta[0], 0, 'f', 4)
 		               .arg(beta[1], 0, 'f', 4)
 		               .arg(r2, 0, 'f', 4);
+		result.betaA = beta[0];
+		result.betaB = beta[1];
 		break;
 	}
 }

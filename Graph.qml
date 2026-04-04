@@ -49,6 +49,14 @@ Rectangle {
 		axisX: ValueAxis {
 			id: xA
 			subTickCount: 1
+
+			onMinChanged: {
+				root.backend.updateFitRange(xA.min, xA.max)
+			}
+
+			onMaxChanged: {
+				root.backend.updateFitRange(xA.min, xA.max)
+			}
 		}
 
 		axisY: ValueAxis {
@@ -59,6 +67,9 @@ Rectangle {
 		Component.onCompleted: {
 			root.backend.pointSeries.pointDelegate = plotPointDelegate
 			view.addSeries(root.backend.pointSeries)
+			view.addSeries(root.backend.fitSeries)
+
+			root.backend.updateFitRange(xA.min, xA.max)
 		}
 	}
 

@@ -30,11 +30,16 @@ ApplicationWindow {
 		width: 500
 		height: 350
 
-		AboutDialog {
+		Loader {
+			active: aboutDialog.enabled
+			asynchronous: true
 			anchors.fill: parent
-			anchors.margins: 10
+			AboutDialog {
+				anchors.fill: parent
+				anchors.margins: 10
 
-			onClosedClicked: aboutDialog.close()
+				onClosedClicked: aboutDialog.close()
+			}
 		}
 
 		background: Rectangle {

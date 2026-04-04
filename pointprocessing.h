@@ -6,6 +6,7 @@
 #include <QThread>
 #include "result.h"
 #include <QTimer>
+#include <QLineSeries>
 
 class workerprocessing;
 
@@ -15,10 +16,12 @@ class pointprocessing : public QObject {
 	QML_NAMED_ELEMENT(PointProcessing)
 
 	Q_PROPERTY(QScatterSeries* pointSeries READ pointSeries CONSTANT)
-	Q_PROPERTY(qint64 error READ error NOTIFY errorChanged FINAL)
+	Q_PROPERTY(QLineSeries* fitSeries READ fitSeries CONSTANT)
+	Q_PROPERTY(QString error READ error NOTIFY errorChanged FINAL)
 	Q_PROPERTY(Progress progress READ progress NOTIFY progressChanged FINAL)
 	Q_PROPERTY(PlotType plotType READ plotType WRITE setPlotType NOTIFY plotTypeChanged FINAL)
 	Q_PROPERTY(QString resultEquation READ resultEquation NOTIFY resultEquationChanged FINAL)
+	Q_PROPERTY(qint64 fitSamples READ fitSamples WRITE setFitSamples NOTIFY fitSamplesChanged FINAL)
 
 public:
 	explicit pointprocessing(QObject* parent = nullptr);
@@ -43,7 +46,7 @@ public:
 	Q_ENUM(Progress)
 
 
-	[[nodiscard]] qint64 error() const;
+	[[nodiscard]] QString error() const;
 
 	[[nodiscard]] Progress progress() const;
 
@@ -51,8 +54,17 @@ public:
 
 	[[nodiscard]] QScatterSeries* pointSeries() const;
 
+	[[nodiscard]] QLineSeries* fitSeries() const;
+
 	[[nodiscard]] PlotType plotType() const;
 	void setPlotType(PlotType plotType);
+
+	[[nodiscard]] qint64 fitSamples() const;
+	void setFitSamples(qint64 fitSamples);
+
+	Q_INVOKABLE void updateFitRange(double xMin, double xMax);
+
+	Q_INVOKABLE void clear() const;
 
 private slots:
 	void onWorkerFinished(const Result& result);
@@ -65,18 +77,29 @@ signals:
 	void progressChanged();
 	void plotTypeChanged();
 	void resultEquationChanged();
+	void fitSamplesChanged();
 
 	void requestRun(const QList<QPointF>& points, PlotType plotType);
 
 private:
 	void fireWorker();
 	void setProgress(Progress progress);
+	void resampleFitSeries(double xMin, double xMax) const;
 
-	qint64 _error{};
+	QString _error{};
 	QScatterSeries* _series{};
+	QLineSeries* _fitSeries{};
 	PlotType _plotType{};
 	Progress _progress{};
 	QString _resultEquation{};
+	double _bA{};
+	double _bB{};
+	double _bC{};
+
+	double _lastXMin{};
+	double _lastXMax{};
+
+	qint64 _fitSamples{200};
 
 	workerprocessing* _worker{};
 	QThread* _workerThread{};

@@ -37,7 +37,7 @@ Rectangle {
 		ToolButton {
 			text: "Clear"
 			onClicked: {
-				root.backend.pointSeries.clear()
+				root.backend.clear()
 				root.xAxis.min = 0; root.xAxis.max = 100
 				root.yAxis.min = 0; root.yAxis.max = 100
 			}

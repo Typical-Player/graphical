@@ -9,8 +9,10 @@ struct Result {
 	QML_VALUE_TYPE(result)
 
 public:
-	QString eqRes;
-	qint64 error;
+	QString eqRes{};
+	double betaA{};
+	double betaB{};
+	double betaC{};
 };
 
 #endif //GRAPHICAL_RESULT_H
