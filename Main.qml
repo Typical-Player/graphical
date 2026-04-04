@@ -118,8 +118,17 @@ ApplicationWindow {
 			Layout.fillHeight: true
 			Layout.fillWidth: true
 			backend: processing
-			panMode: root.panmode
-			freedrawMode: root.freedrawmode
+			panMode: topBar.panToggle
+			freedrawMode: topBar.freedrawToggle
+			eraserMode: topBar.eraserToggle
+
+			showGrid: topBar.showGrid
+			showGuides: topBar.showGuide
+			showBestFit: topBar.showBestFit
+			selectedColor: topBar.selectedColor
+
+			brushSize: topBar.brushSize
+			brushDensity: topBar.brushDensity
 		}
 
 		ResultBar {

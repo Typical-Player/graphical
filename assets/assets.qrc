@@ -5,5 +5,10 @@
         <file>logo.svg</file>
         <file>recenter.svg</file>
         <file>clear.svg</file>
+        <file>bestfit.svg</file>
+        <file>division.svg</file>
+        <file>showgrid.svg</file>
+        <file>showguides.svg</file>
+        <file>eraser.svg</file>
     </qresource>
 </RCC>

@@ -19,7 +19,7 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_fitSeries->setColor(color);
 
 	_debounceTimer = new QTimer(this);
-	_debounceTimer->setInterval(500);
+	_debounceTimer->setInterval(50);
 	_debounceTimer->setSingleShot(true);
 
 	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);

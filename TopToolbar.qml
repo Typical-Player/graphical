@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import QtGraphs
 import graphical
 
@@ -13,10 +14,26 @@ Rectangle {
 	required property ValueAxis xAxis
 	required property ValueAxis yAxis
 
+	readonly property color selectedColor: selectedColorDialog.selectedColor
+
 	readonly property bool panToggle: pantoggle.checked
 	readonly property bool freedrawToggle: freedrawtoggle.checked
+	readonly property bool eraserToggle: erasertoggle.checked
+
+	readonly property bool showBestFit: showBestFitToggle.checked
+	readonly property bool showGuide: showGuideToggle.checked
+	readonly property bool showGrid: showGridToggle.checked
+	readonly property bool useFractions: useFractionsToggle.checked
+
+	readonly property int brushSize: brushSizeList.brushSize
+	readonly property int brushDensity: brushSizeList.brushDensity
 
 	property int spacing: 4
+
+	ColorDialog {
+		id: selectedColorDialog
+		selectedColor: "blue"
+	}
 
 	color: "transparent"
 
@@ -35,24 +52,27 @@ Rectangle {
 		}
 
 		ToolButton {
-			text: "Clear"
 			onClicked: {
 				root.backend.clear()
 				root.xAxis.min = 0; root.xAxis.max = 100
 				root.yAxis.min = 0; root.yAxis.max = 100
 			}
 
-			font.family: "Helvetica"
 			icon.source: "qrc:/icons/clear.svg"
+
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Clear"
 		}
 
 		ToolButton {
-			text: "Recenter"
 			enabled: root.backend.pointSeries.count > 0
 			onClicked: U.recenter(root.backend.pointSeries, root.xAxis, root.yAxis)
 
-			font.family: "Helvetica"
 			icon.source: "qrc:/icons/recenter.svg"
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Re-center"
 		}
 
 		ToolSeparator {
@@ -75,7 +95,7 @@ Rectangle {
 
 				ToolTip.delay: 1000
 				ToolTip.visible: hovered
-				ToolTip.text: "Pan mode"
+				ToolTip.text: "Drag mode"
 			}
 
 			ToolButton {
@@ -86,6 +106,115 @@ Rectangle {
 				ToolTip.delay: 1000
 				ToolTip.visible: hovered
 				ToolTip.text: "Freedraw mode"
+			}
+
+			ToolButton {
+				id: erasertoggle
+				checkable: true
+				icon.source: "qrc:/icons/eraser.svg"
+
+				ToolTip.delay: 1000
+				ToolTip.visible: hovered
+				ToolTip.text: "Eraser mode"
+			}
+		}
+
+		ToolSeparator {
+		}
+
+		ToolButton {
+			id: showBestFitToggle
+			checkable: true
+			checked: true
+
+			icon.source: "qrc:/icons/bestfit.svg"
+
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show best fit"
+		}
+
+		ToolButton {
+			id: showGuideToggle
+			checkable: true
+
+			icon.source: "qrc:/icons/showguides.svg"
+
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show guides"
+		}
+
+		ToolButton {
+			id: showGridToggle
+			icon.source: "qrc:/icons/showgrid.svg"
+			checkable: true
+			checked: true
+
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show grid"
+		}
+
+		ToolButton {
+			id: useFractionsToggle
+			checkable: true
+			icon.source: "qrc:/icons/division.svg"
+
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show fractions"
+		}
+
+		ToolSeparator {
+			visible: root.freedrawToggle
+		}
+
+		ComboBox {
+			id: brushSizeList
+
+			property int brushSize: 1
+			property int brushDensity: 1
+
+			visible: root.freedrawToggle || root.eraserToggle
+			model: ["Single", "Small", "Medium", "Large"]
+			onCurrentIndexChanged: {
+				const idx = brushSizeList.currentIndex
+				//? QMLLS for some reason crashes if I put a switch statement here
+
+				if (idx === 0) {
+					brushSizeList.brushSize = 1
+					brushSizeList.brushDensity = 1
+				}
+
+				if (idx === 1) {
+					brushSizeList.brushSize = 10
+					brushSizeList.brushDensity = 5
+				}
+
+				if (idx === 2) {
+					brushSizeList.brushSize = 30
+					brushSizeList.brushDensity = 15
+				}
+
+				if (idx === 3) {
+					brushSizeList.brushSize = 50
+					brushSizeList.brushDensity = 25
+				}
+
+			}
+		}
+
+		ToolButton {
+			visible: root.freedrawToggle
+			onClicked: {
+				selectedColorDialog.open()
+			}
+
+			Rectangle {
+				anchors.fill: parent
+				color: selectedColorDialog.selectedColor
+				anchors.margins: 5
 			}
 		}
 
