@@ -36,6 +36,9 @@ qt_add_qml_module(appgraphical
         qml/BrushGuide.qml
         qml/PlotPoint.qml
         qml/GraphInteractions.qml
+        qml/GraphicalDialog.qml
+        qml/ProcessingSidebarWrapper.qml
+        qml/ProcessingSidebar.qml
         SOURCES
         pointprocessing.cpp
         pointprocessing.h

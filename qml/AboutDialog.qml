@@ -28,8 +28,8 @@ Item {
 			fillMode: Image.PreserveAspectFit
 
 			mipmap: true
-			sourceSize.width: 300
-			sourceSize.height: 100
+			sourceSize.width: 150
+			sourceSize.height: 80
 		}
 
 		Item {

@@ -26,6 +26,8 @@ Rectangle {
 	readonly property int brushSize: brushSizeList.brushSize
 	readonly property int brushDensity: brushSizeList.brushDensity
 
+	readonly property bool leftSidebarActive: leftSidebarToggle.checked
+
 	property int spacing: 4
 
 	ColorDialog {
@@ -42,6 +44,16 @@ Rectangle {
 	RowLayout {
 		anchors.fill: parent
 		spacing: root.spacing
+
+		ToolButton {
+			id: leftSidebarToggle
+			checkable: true
+
+			icon.source: "qrc:/icons/opensidebar.svg"
+		}
+
+		ToolSeparator {
+		}
 
 		ComboBox {
 			model: ["Lineal", "Cuadratic", "Exponential"]

@@ -20,7 +20,6 @@ Item {
 
 	required property GraphsView gv
 
-	//? Classic mouse interactions
 	MouseArea {
 		id: graphMouseArea
 		anchors.fill: parent

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
-import QtQuick.Effects
 import graphical
 
 ApplicationWindow {
@@ -14,19 +13,8 @@ ApplicationWindow {
 	minimumWidth: 900
 	minimumHeight: 512
 
-	property bool freedrawmode: topBar.freedrawToggle
-	property bool panmode: topBar.panToggle
-
-	Dialog {
+	GraphicalDialog {
 		id: aboutDialog
-		modal: true
-		focus: true
-		parent: Overlay.overlay
-		popupType: Popup.Item
-
-		x: Math.round((parent.width - width) / 2)
-		y: Math.round((parent.height - height) / 2)
-
 		width: 500
 		height: 350
 
@@ -39,41 +27,6 @@ ApplicationWindow {
 				anchors.margins: 10
 
 				onClosedClicked: aboutDialog.close()
-			}
-		}
-
-		background: Rectangle {
-			color: colorPallete.window
-			radius: 4
-
-			layer.enabled: true
-			layer.effect: MultiEffect {
-				shadowEnabled: true
-				shadowColor: "black"
-				shadowBlur: 1.0
-				shadowVerticalOffset: 5
-				shadowHorizontalOffset: 0
-			}
-		}
-
-		enter: Transition {
-			NumberAnimation {
-				property: "opacity";
-				from: 0.0;
-				to: 1.0; duration: 180
-			}
-			NumberAnimation {
-				property: "scale";
-				from: 0.5;
-				to: 1.0; duration: 180; easing.type: Easing.OutExpo
-			}
-		}
-
-		exit: Transition {
-			NumberAnimation {
-				property: "opacity";
-				from: 1.0;
-				to: 0.0; duration: 180
 			}
 		}
 	}
@@ -114,33 +67,45 @@ ApplicationWindow {
 		}
 	}
 
-	ColumnLayout {
+	RowLayout {
 		anchors.fill: parent
 		spacing: 0
 
-		Graph {
-			id: graph
+		ProcessingSidebarWrapper {
 			Layout.fillHeight: true
-			Layout.fillWidth: true
+			isActive: topBar.leftSidebarActive
 			backend: processing
-			panMode: topBar.panToggle
-			freedrawMode: topBar.freedrawToggle
-			eraserMode: topBar.eraserToggle
-
-			showGrid: topBar.showGrid
-			showGuides: topBar.showGuide
-			showBestFit: topBar.showBestFit
-			selectedColor: topBar.selectedColor
-
-			brushSize: topBar.brushSize
-			brushDensity: topBar.brushDensity
 		}
 
-		ResultBar {
+		ColumnLayout {
 			Layout.fillWidth: true
-			implicitHeight: 50
+			Layout.fillHeight: true
+			spacing: 0
 
-			backend: processing
+			Graph {
+				id: graph
+				Layout.fillHeight: true
+				Layout.fillWidth: true
+				backend: processing
+				panMode: topBar.panToggle
+				freedrawMode: topBar.freedrawToggle
+				eraserMode: topBar.eraserToggle
+
+				showGrid: topBar.showGrid
+				showGuides: topBar.showGuide
+				showBestFit: topBar.showBestFit
+				selectedColor: topBar.selectedColor
+
+				brushSize: topBar.brushSize
+				brushDensity: topBar.brushDensity
+			}
+
+			ResultBar {
+				Layout.fillWidth: true
+				implicitHeight: 50
+
+				backend: processing
+			}
 		}
 	}
 }
