@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 
 Item {
 	id: root
@@ -63,13 +63,41 @@ Item {
 		}
 
 		Item {
-			implicitHeight: 8
+			implicitHeight: 6
 		}
 
-		Label {
-			text: "Made using Qt Framework by Qt Group"
-			font.family: "Helvetica"
-			font.bold: true
+		Row {
+			spacing: 4
+			Label {
+				id: gfnotice
+				text: "Icons from Google Fonts"
+				font.family: "Helvetica"
+				font.bold: true
+			}
+
+			Label {
+				text: "Apache License Version 2.0"
+				font.family: "Helvetica"
+				font.pointSize: 7
+				anchors.verticalCenter: gfnotice.verticalCenter
+			}
+		}
+
+		Row {
+			spacing: 4
+			Label {
+				id: qtnotice
+				text: "Made using Qt Framework by Qt Group"
+				font.family: "Helvetica"
+				font.bold: true
+			}
+
+			Label {
+				text: "GNU General Public License Version 3"
+				font.family: "Helvetica"
+				font.pointSize: 7
+				anchors.verticalCenter: qtnotice.verticalCenter
+			}
 		}
 
 		Label {

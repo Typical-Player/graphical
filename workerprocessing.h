@@ -13,7 +13,7 @@ public:
 	void requestCancellation();
 
 public slots:
-	void run(const QList<QPointF>& points, pointprocessing::PlotType plotType);
+	void run(const QList<QPointF>& points, pointprocessing::PlotType plotType, bool useFractions);
 
 signals:
 	void finished(const Result& result);
@@ -23,13 +23,18 @@ signals:
 private:
 	[[nodiscard]] bool isCanceled() const;
 
-	void fitLinear(const QList<QPointF>& points, Result& result, bool& ok);
-	void fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok);
-	void fitExponential(const QList<QPointF>& points, Result& result, bool& ok);
+	void fitLinear(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
+	void fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
+	void fitExponential(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
+
+	[[nodiscard]] static QString calculateEuclideanFraction(double input);
+	[[nodiscard]] static long gcd(long a, long b);
 
 	static void compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
-	                    pointprocessing::PlotType plotType);
+	                    pointprocessing::PlotType plotType, bool useFractions);
 	[[nodiscard]] static QList<double> solve(const g_matrix<double>& X, const QList<double>& Y);
+
+	[[nodiscard]] static QString prettyPrint(double number, bool useFractions);
 
 	QAtomicInt _canceled{0};
 };

@@ -1,11 +1,9 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtGraphs
 import graphical
-
-import "utils.mjs" as U
 
 Rectangle {
 	id: root
@@ -39,6 +37,8 @@ Rectangle {
 
 	signal logoClicked()
 
+	signal recenterClicked()
+
 	RowLayout {
 		anchors.fill: parent
 		spacing: root.spacing
@@ -67,7 +67,7 @@ Rectangle {
 
 		ToolButton {
 			enabled: root.backend.pointSeries.count > 0
-			onClicked: U.recenter(root.backend.pointSeries, root.xAxis, root.yAxis)
+			onClicked: root.recenterClicked()
 
 			icon.source: "qrc:/icons/recenter.svg"
 			ToolTip.delay: 1000
@@ -156,6 +156,9 @@ Rectangle {
 			ToolTip.text: "Show grid"
 		}
 
+		ToolSeparator {
+		}
+
 		ToolButton {
 			id: useFractionsToggle
 			checkable: true
@@ -167,7 +170,7 @@ Rectangle {
 		}
 
 		ToolSeparator {
-			visible: root.freedrawToggle
+			visible: root.freedrawToggle || root.eraserToggle
 		}
 
 		ComboBox {

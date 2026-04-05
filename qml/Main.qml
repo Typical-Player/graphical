@@ -1,17 +1,17 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import QtQuick.Effects
 import graphical
 
 ApplicationWindow {
 	id: root
-	width: 800
+	width: 900
 	height: 512
 	visible: true
 	title: "Graphical"
 
-	minimumWidth: 800
+	minimumWidth: 900
 	minimumHeight: 512
 
 	property bool freedrawmode: topBar.freedrawToggle
@@ -80,6 +80,7 @@ ApplicationWindow {
 
 	PointProcessing {
 		id: processing
+		useFractions: topBar.useFractions
 	}
 
 	ColorGroup {
@@ -105,6 +106,10 @@ ApplicationWindow {
 
 			onLogoClicked: {
 				aboutDialog.open()
+			}
+
+			onRecenterClicked: {
+				graph.recenter()
 			}
 		}
 	}

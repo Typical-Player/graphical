@@ -7,7 +7,8 @@ void workerprocessing::requestCancellation() {
 	_canceled.storeRelease(1);
 }
 
-void workerprocessing::run(const QList<QPointF>& points, const pointprocessing::PlotType plotType) {
+void workerprocessing::run(const QList<QPointF>& points, const pointprocessing::PlotType plotType,
+                           const bool useFractions) {
 	_canceled.storeRelease(0);
 
 	if (points.isEmpty()) {
@@ -19,11 +20,11 @@ void workerprocessing::run(const QList<QPointF>& points, const pointprocessing::
 	bool ok = true;
 
 	switch (plotType) {
-	case pointprocessing::LINEAL: fitLinear(points, result, ok);
+	case pointprocessing::LINEAL: fitLinear(points, result, ok, useFractions);
 		break;
-	case pointprocessing::CUADRATIC: fitQuadratic(points, result, ok);
+	case pointprocessing::CUADRATIC: fitQuadratic(points, result, ok, useFractions);
 		break;
-	case pointprocessing::EXPONENTIAL: fitExponential(points, result, ok);
+	case pointprocessing::EXPONENTIAL: fitExponential(points, result, ok, useFractions);
 		break;
 	}
 
@@ -43,7 +44,7 @@ bool workerprocessing::isCanceled() const {
 	return _canceled.loadAcquire() != 0;
 }
 
-void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, bool& ok) {
+void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
 	const auto n = points.size();
 	if (n < 2) {
 		emit error("Need at least 2 points for linear fit");
@@ -64,10 +65,10 @@ void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, b
 	}
 
 	const auto beta = solve(X, y);
-	compute(points, result, beta, pointprocessing::LINEAL);
+	compute(points, result, beta, pointprocessing::LINEAL, useFractions);
 }
 
-void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok) {
+void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
 	const auto n = points.size();
 	if (n < 3) {
 		emit error("Need at least 3 points for quadratic fit");
@@ -89,10 +90,10 @@ void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result
 	}
 
 	const auto beta = solve(X, y);
-	compute(points, result, beta, pointprocessing::CUADRATIC);
+	compute(points, result, beta, pointprocessing::CUADRATIC, useFractions);
 }
 
-void workerprocessing::fitExponential(const QList<QPointF>& points, Result& result, bool& ok) {
+void workerprocessing::fitExponential(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
 	const auto n = points.size();
 	if (n < 2) {
 		emit error("Need at least 2 points for exponential fit");
@@ -122,11 +123,35 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 	auto beta = solve(X, y);
 
 	const QList recovered = {std::exp(beta[0]), beta[1]};
-	compute(points, result, recovered, pointprocessing::EXPONENTIAL);
+	compute(points, result, recovered, pointprocessing::EXPONENTIAL, useFractions);
+}
+
+//? https://stackoverflow.com/questions/26643695/converting-a-floating-point-decimal-value-to-a-fraction
+QString workerprocessing::calculateEuclideanFraction(const double input) {
+	const double integer = std::floor(input);
+	const double frac = input - integer;
+
+	constexpr long precision = 1000000000;
+
+	const long long gcdVal = gcd(static_cast<long>(round(frac * precision)), precision);
+	const long long denominator = precision / gcdVal;
+	const long long numerator = static_cast<long>(round(frac * precision)) / gcdVal;
+
+	return QString::number(static_cast<long long>(integer) * denominator + numerator) + "/" +
+		QString::number(denominator);
+}
+
+long workerprocessing::gcd(const long a, const long b) {
+	if (a == 0) return b;
+	if (b == 0) return a;
+
+	if (a < b) return gcd(a, b % a);
+
+	return gcd(b, a % b);
 }
 
 void workerprocessing::compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
-                               const pointprocessing::PlotType plotType) {
+                               const pointprocessing::PlotType plotType, const bool useFractions) {
 	const auto n = points.size();
 	double sumY = 0;
 
@@ -158,17 +183,17 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 	switch (plotType) {
 	case 0:
 		result.eqRes = QString("y = %1x + %2  (R²=%3)")
-		               .arg(beta[1], 0, 'f', 4)
-		               .arg(beta[0], 0, 'f', 4)
+		               .arg(prettyPrint(std::round(beta[1] * 1000.0) / 1000.0, useFractions))
+		               .arg(prettyPrint(std::round(beta[0] * 1000.0) / 1000.0, useFractions))
 		               .arg(r2, 0, 'f', 4);
 		result.betaA = beta[0];
 		result.betaB = beta[1];
 		break;
 	case 1:
 		result.eqRes = QString("y = %1x² + %2x + %3  (R²=%4)")
-		               .arg(beta[2], 0, 'f', 4)
-		               .arg(beta[1], 0, 'f', 4)
-		               .arg(beta[0], 0, 'f', 4)
+		               .arg(prettyPrint(std::round(beta[2] * 1000.0) / 1000.0, useFractions))
+		               .arg(prettyPrint(std::round(beta[1] * 1000.0) / 1000.0, useFractions))
+		               .arg(prettyPrint(std::round(beta[0] * 1000.0) / 1000.0, useFractions))
 		               .arg(r2, 0, 'f', 4);
 		result.betaA = beta[0];
 		result.betaB = beta[1];
@@ -176,8 +201,8 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 		break;
 	case 2:
 		result.eqRes = QString("y = %1·e^(%2x)  (R²=%3)")
-		               .arg(beta[0], 0, 'f', 4)
-		               .arg(beta[1], 0, 'f', 4)
+		               .arg(prettyPrint(std::round(beta[0] * 1000.0) / 1000.0, useFractions))
+		               .arg(prettyPrint(std::round(beta[1] * 1000.0) / 1000.0, useFractions))
 		               .arg(r2, 0, 'f', 4);
 		result.betaA = beta[0];
 		result.betaB = beta[1];
@@ -191,4 +216,9 @@ QList<double> workerprocessing::solve(const g_matrix<double>& X, const QList<dou
 	const auto XtY = Xt * Y;
 
 	return XtX.inverse() * XtY;
+}
+
+QString workerprocessing::prettyPrint(const double number, const bool useFractions) {
+	if (!useFractions) return QString("%1").arg(number, 0, 'f', 4);
+	return calculateEuclideanFraction(number);
 }

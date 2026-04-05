@@ -27,15 +27,20 @@ qt_add_executable(appgraphical
 qt_add_qml_module(appgraphical
         URI graphical
         QML_FILES
-        Main.qml
-        Graph.qml
-        ResultBar.qml
-        TopToolbar.qml
-        AboutDialog.qml
-        utils.mjs
+        qml/Main.qml
+        qml/Graph.qml
+        qml/ResultBar.qml
+        qml/TopToolbar.qml
+        qml/AboutDialog.qml
+        qml/GuideOverlay.qml
+        qml/BrushGuide.qml
+        qml/PlotPoint.qml
+        qml/GraphInteractions.qml
         SOURCES
         pointprocessing.cpp
         pointprocessing.h
+        graphutils.cpp
+        graphutils.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

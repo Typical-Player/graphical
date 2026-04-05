@@ -19,13 +19,15 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_fitSeries->setColor(color);
 
 	_debounceTimer = new QTimer(this);
-	_debounceTimer->setInterval(50);
+	_debounceTimer->setInterval(150);
 	_debounceTimer->setSingleShot(true);
 
 	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
+	connect(_series, &QScatterSeries::pointsReplaced, this, &pointprocessing::onDataChanged);
 	connect(_series, &QScatterSeries::pointAdded, this, &pointprocessing::onDataChanged);
 	connect(_series, &QScatterSeries::pointRemoved, this, &pointprocessing::onDataChanged);
 	connect(this, &pointprocessing::plotTypeChanged, this, &pointprocessing::onDataChanged);
+	connect(this, &pointprocessing::useFractionsChanged, this, &pointprocessing::onDataChanged);
 
 	connect(_debounceTimer, &QTimer::timeout, this, &pointprocessing::fireWorker);
 
@@ -85,6 +87,17 @@ void pointprocessing::setFitSamples(const qint64 fitSamples) {
 	emit fitSamplesChanged();
 }
 
+bool pointprocessing::useFractions() const {
+	return _useFractions;
+}
+
+void pointprocessing::setUseFractions(const bool useFractions) {
+	if (_useFractions == useFractions) return;
+
+	_useFractions = useFractions;
+	emit useFractionsChanged();
+}
+
 void pointprocessing::updateFitRange(const double xMin, const double xMax) {
 	_lastXMin = xMin;
 	_lastXMax = xMax;
@@ -120,7 +133,6 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 }
 
 void pointprocessing::onWorkerError(const QString& err) {
-	qWarning() << "WORKER ERROR: " << err;
 	_fitSeries->clear();
 	_error = err;
 	setProgress(ERROR);
@@ -150,7 +162,7 @@ void pointprocessing::fireWorker() {
 	_pendingRestart = false;
 	setProgress(PROCESSING);
 
-	emit requestRun(_series->points(), _plotType);
+	emit requestRun(_series->points(), _plotType, _useFractions);
 }
 
 void pointprocessing::setProgress(const Progress progress) {

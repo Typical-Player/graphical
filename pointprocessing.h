@@ -22,6 +22,7 @@ class pointprocessing : public QObject {
 	Q_PROPERTY(PlotType plotType READ plotType WRITE setPlotType NOTIFY plotTypeChanged FINAL)
 	Q_PROPERTY(QString resultEquation READ resultEquation NOTIFY resultEquationChanged FINAL)
 	Q_PROPERTY(qint64 fitSamples READ fitSamples WRITE setFitSamples NOTIFY fitSamplesChanged FINAL)
+	Q_PROPERTY(bool useFractions READ useFractions WRITE setUseFractions NOTIFY useFractionsChanged FINAL)
 
 public:
 	explicit pointprocessing(QObject* parent = nullptr);
@@ -62,6 +63,9 @@ public:
 	[[nodiscard]] qint64 fitSamples() const;
 	void setFitSamples(qint64 fitSamples);
 
+	[[nodiscard]] bool useFractions() const;
+	void setUseFractions(bool useFractions);
+
 	Q_INVOKABLE void updateFitRange(double xMin, double xMax);
 
 	Q_INVOKABLE void clear() const;
@@ -78,8 +82,9 @@ signals:
 	void plotTypeChanged();
 	void resultEquationChanged();
 	void fitSamplesChanged();
+	void useFractionsChanged();
 
-	void requestRun(const QList<QPointF>& points, PlotType plotType);
+	void requestRun(const QList<QPointF>& points, PlotType plotType, bool useFractions);
 
 private:
 	void fireWorker();
@@ -107,6 +112,7 @@ private:
 	QTimer* _debounceTimer{};
 
 	bool _pendingRestart{};
+	bool _useFractions{};
 };
 
 
