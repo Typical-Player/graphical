@@ -65,6 +65,8 @@ void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, b
 	}
 
 	const auto beta = solve(X, y);
+
+	fillMatrices(result, X, y, beta);
 	compute(points, result, beta, pointprocessing::LINEAL, useFractions);
 }
 
@@ -90,6 +92,8 @@ void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result
 	}
 
 	const auto beta = solve(X, y);
+
+	fillMatrices(result, X, y, beta);
 	compute(points, result, beta, pointprocessing::CUADRATIC, useFractions);
 }
 
@@ -122,6 +126,7 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 
 	auto beta = solve(X, y);
 
+	fillMatrices(result, X, y, beta);
 	const QList recovered = {std::exp(beta[0]), beta[1]};
 	compute(points, result, recovered, pointprocessing::EXPONENTIAL, useFractions);
 }
@@ -216,6 +221,25 @@ QList<double> workerprocessing::solve(const g_matrix<double>& X, const QList<dou
 	const auto XtY = Xt * Y;
 
 	return XtX.inverse() * XtY;
+}
+
+void workerprocessing::fillMatrices(Result& res, const g_matrix<double>& X, const QList<double>& Y,
+                                    const QList<double>& beta) {
+	res.sr.aMat = X._data;
+	res.sr.bMat = QList<QList<double>>();
+	res.sr.bMat.push_back(Y);
+
+	const auto ata = X.transpose() * X;
+	const auto atainv = ata.inverse();
+
+	res.sr.atMat = X.transpose()._data;
+	res.sr.ataMat = ata._data;
+	res.sr.atainvMat = atainv._data;
+	res.sr.atbMat = QList<QList<double>>();
+	res.sr.atbMat.push_back(X.transpose() * Y);
+
+	res.sr.resMat = QList<QList<double>>();
+	res.sr.resMat.push_back(beta);
 }
 
 QString workerprocessing::prettyPrint(const double number, const bool useFractions) {

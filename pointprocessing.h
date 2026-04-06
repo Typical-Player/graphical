@@ -17,6 +17,7 @@ class pointprocessing : public QObject {
 
 	Q_PROPERTY(QScatterSeries* pointSeries READ pointSeries CONSTANT)
 	Q_PROPERTY(QLineSeries* fitSeries READ fitSeries CONSTANT)
+    Q_PROPERTY(SidebarResult resultMatrices READ resultMatrices NOTIFY resultMatricesChanged FINAL)
 	Q_PROPERTY(QString error READ error NOTIFY errorChanged FINAL)
 	Q_PROPERTY(Progress progress READ progress NOTIFY progressChanged FINAL)
 	Q_PROPERTY(PlotType plotType READ plotType WRITE setPlotType NOTIFY plotTypeChanged FINAL)
@@ -53,6 +54,8 @@ public:
 
 	[[nodiscard]] QString resultEquation() const;
 
+    [[nodiscard]] SidebarResult resultMatrices() const;
+
 	[[nodiscard]] QScatterSeries* pointSeries() const;
 
 	[[nodiscard]] QLineSeries* fitSeries() const;
@@ -66,7 +69,7 @@ public:
 	[[nodiscard]] bool useFractions() const;
 	void setUseFractions(bool useFractions);
 
-	Q_INVOKABLE void updateFitRange(double xMin, double xMax);
+	Q_INVOKABLE void updateFitRange(double xMin, double xMax, double yMin, double yMax);
 
 	Q_INVOKABLE void clear() const;
 
@@ -83,8 +86,9 @@ signals:
 	void resultEquationChanged();
 	void fitSamplesChanged();
 	void useFractionsChanged();
+    void resultMatricesChanged();
 
-	void requestRun(const QList<QPointF>& points, PlotType plotType, bool useFractions);
+    void requestRun(const QList<QPointF>& points, pointprocessing::PlotType plotType, bool useFractions);
 
 private:
 	void fireWorker();
@@ -103,11 +107,15 @@ private:
 
 	double _lastXMin{};
 	double _lastXMax{};
+	double _YMin{};
+	double _YMax{};
 
 	qint64 _fitSamples{200};
 
 	workerprocessing* _worker{};
 	QThread* _workerThread{};
+
+    SidebarResult _sdRes{};
 
 	QTimer* _debounceTimer{};
 

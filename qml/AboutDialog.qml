@@ -48,7 +48,7 @@ Item {
 		}
 
 		Label {
-			text: "Graphical (0.0.1a)"
+			text: "Graphical (0.7.0b)"
 			font.family: "Helvetica"
 			font.bold: true
 		}
@@ -60,10 +60,6 @@ Item {
 				"Gomez Romero Adrian Rogers"].join("\n")
 
 			font.family: "Helvetica"
-		}
-
-		Item {
-			implicitHeight: 6
 		}
 
 		Row {
@@ -80,6 +76,23 @@ Item {
 				font.family: "Helvetica"
 				font.pointSize: 7
 				anchors.verticalCenter: gfnotice.verticalCenter
+			}
+		}
+
+		Row {
+			spacing: 4
+			Label {
+				id: gffnotice
+				text: "Roboto Serif from Google Fonts"
+				font.family: "Helvetica"
+				font.bold: true
+			}
+
+			Label {
+				text: "SIL Open Font License Version 1.1"
+				font.family: "Helvetica"
+				font.pointSize: 7
+				anchors.verticalCenter: gffnotice.verticalCenter
 			}
 		}
 

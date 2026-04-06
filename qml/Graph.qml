@@ -77,17 +77,25 @@ Rectangle {
 			subTickCount: 1
 
 			onMinChanged: {
-				root.backend.updateFitRange(xA.min, xA.max)
+				root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
 			}
 
 			onMaxChanged: {
-				root.backend.updateFitRange(xA.min, xA.max)
+				root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
 			}
 		}
 
 		axisY: ValueAxis {
 			id: yA
 			subTickCount: 1
+
+			onMinChanged: {
+				root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+			}
+
+			onMaxChanged: {
+				root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+			}
 		}
 
 		Component.onCompleted: {
@@ -97,7 +105,7 @@ Rectangle {
 				view.addSeries(root.backend.fitSeries)
 			}
 
-			root.backend.updateFitRange(xA.min, xA.max)
+			root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
 		}
 	}
 

@@ -16,7 +16,18 @@ Dialog {
 	}
 
 	background: Rectangle {
-		color: colorPallete.window
+		gradient: Gradient {
+			GradientStop {
+				position: 0
+				color: colorPallete.window
+			}
+
+			GradientStop {
+				position: 1
+				color: Qt.darker(colorPallete.window, 1.2)
+			}
+		}
+
 		radius: 4
 
 		layer.enabled: true

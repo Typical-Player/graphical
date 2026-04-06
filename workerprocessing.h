@@ -34,6 +34,8 @@ private:
 	                    pointprocessing::PlotType plotType, bool useFractions);
 	[[nodiscard]] static QList<double> solve(const g_matrix<double>& X, const QList<double>& Y);
 
+	static void fillMatrices(Result& res, const g_matrix<double>& X, const QList<double>& Y, const QList<double>& beta);
+
 	[[nodiscard]] static QString prettyPrint(double number, bool useFractions);
 
 	QAtomicInt _canceled{0};

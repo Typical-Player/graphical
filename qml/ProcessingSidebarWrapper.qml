@@ -1,4 +1,6 @@
+pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls.Fusion
 import graphical
 
 Item {
@@ -7,19 +9,15 @@ Item {
 	required property PointProcessing backend
 	property bool isActive: false
 
-	readonly property int expandedWidth: 400
-
-	implicitWidth: isActive ? expandedWidth : 0
-
-	Behavior on implicitWidth {
-		NumberAnimation {
-			duration: 500
-			easing: Easing.OutExpo
-		}
-	}
-
 	ColorGroup {
 		id: colorPallete
+	}
+
+	Component {
+		id: processingSidebarComponent
+		ProcessingSidebar {
+			backend: root.backend
+		}
 	}
 
 	clip: true
@@ -28,22 +26,56 @@ Item {
 		x: root.x
 		y: root.y
 		height: root.height
-		width: root.expandedWidth
-
+		width: root.width
 		color: colorPallete.base
 
-		ProcessingSidebar {
+		Flickable {
 			anchors.fill: parent
-			backend: root.backend
+			contentWidth: root.width
+			contentHeight: processingLoader.height
+			clip: true
+
+			ScrollBar.vertical: ScrollBar {
+				policy: ScrollBar.AsNeeded
+			}
+			ScrollBar.horizontal: ScrollBar {
+				policy: ScrollBar.AsNeeded
+			}
+
+			flickDeceleration: 0
+			boundsBehavior: Flickable.StopAtBounds
+			flickableDirection: Flickable.VerticalFlick
+			maximumFlickVelocity: 0
+
+			Loader {
+				id: processingLoader
+				width: root.width
+				height: item ? item.implicitHeight : 0
+				asynchronous: true
+				active: root.isActive
+				sourceComponent: processingSidebarComponent
+			}
 		}
 	}
 
 	Rectangle {
-		x: root.width - 1
-		y: root.y
-		height: root.height
-		width: 1
+		anchors.fill: parent
+		opacity: root.backend.progress === PointProcessing.PROCESSING || processingLoader.status !== Loader.Ready  ? 1 : 0
 
-		color: colorPallete.dark
+		clip: true
+
+		color: Qt.rgba(0, 0, 0, .5)
+
+		Behavior on opacity {
+			NumberAnimation {
+				duration: 500
+				easing: Easing.OutExpo
+			}
+		}
+
+		Spinner {
+			anchors.centerIn: parent
+			running: root.backend.progress === PointProcessing.PROCESSING
+		}
 	}
 }

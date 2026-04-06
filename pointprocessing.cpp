@@ -19,7 +19,7 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_fitSeries->setColor(color);
 
 	_debounceTimer = new QTimer(this);
-	_debounceTimer->setInterval(150);
+	_debounceTimer->setInterval(1000);
 	_debounceTimer->setSingleShot(true);
 
 	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
@@ -31,8 +31,8 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 
 	connect(_debounceTimer, &QTimer::timeout, this, &pointprocessing::fireWorker);
 
-	connect(this, &pointprocessing::fitSamplesChanged, this, [this]() {
-		this->updateFitRange(_lastXMin, _lastXMax);
+	connect(this, &pointprocessing::fitSamplesChanged, this, [this] {
+		this->updateFitRange(_lastXMin, _lastXMax, _YMin, _YMax);
 	});
 
 	_workerThread->start();
@@ -55,6 +55,11 @@ pointprocessing::Progress pointprocessing::progress() const {
 
 QString pointprocessing::resultEquation() const {
 	return _resultEquation;
+}
+
+SidebarResult pointprocessing::resultMatrices() const
+{
+    return _sdRes;
 }
 
 QScatterSeries* pointprocessing::pointSeries() const {
@@ -98,9 +103,11 @@ void pointprocessing::setUseFractions(const bool useFractions) {
 	emit useFractionsChanged();
 }
 
-void pointprocessing::updateFitRange(const double xMin, const double xMax) {
+void pointprocessing::updateFitRange(const double xMin, const double xMax, const double yMin, const double yMax) {
 	_lastXMin = xMin;
 	_lastXMax = xMax;
+	_YMax = yMax;
+	_YMin = yMin;
 
 	if (_progress != READY) return;
 	resampleFitSeries(xMin, xMax);
@@ -125,10 +132,12 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 	_bA = result.betaA;
 	_bB = result.betaB;
 	_bC = result.betaC;
+    _sdRes = result.sr;
 
 	resampleFitSeries(_lastXMin, _lastXMax);
 	emit errorChanged();
 	emit resultEquationChanged();
+    emit resultMatricesChanged();
 	setProgress(READY);
 }
 
@@ -178,17 +187,26 @@ void pointprocessing::resampleFitSeries(const double xMin, const double xMax) co
 
 	const double step = (xMax - xMin) / static_cast<double>(_fitSamples);
 
+
 	for (int i = 0; i <= _fitSamples; ++i) {
 		double x = xMin + i * step;
 		double y = 0;
+
 		switch (_plotType) {
 		case LINEAL: y = _bA + _bB * x;
 			break;
 		case CUADRATIC: y = _bA + _bB * x + _bC * x * x;
 			break;
-		case EXPONENTIAL: y = _bA * std::exp(_bB * x);
+		case EXPONENTIAL: {
+			const double expo = _bB * x;
+			if (expo > 700.0 || expo < -700.0) continue;
+			y = _bA * std::exp(expo);
 			break;
 		}
+		}
+		if (const double pad = (_YMax - _YMin) * .5; y < _YMin - pad || y > _YMax + pad) continue;
+
+		if (!std::isfinite(y)) continue;
 
 		points.append({x, y});
 	}

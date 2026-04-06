@@ -58,28 +58,83 @@ ApplicationWindow {
 			yAxis: graph.yAxis
 
 			onLogoClicked: {
-				aboutDialog.open()
+				aboutDialog.open();
 			}
 
 			onRecenterClicked: {
-				graph.recenter()
+				graph.recenter();
 			}
 		}
 	}
 
-	RowLayout {
+	SplitView {
 		anchors.fill: parent
-		spacing: 0
+		orientation: Qt.Horizontal
 
-		ProcessingSidebarWrapper {
-			Layout.fillHeight: true
-			isActive: topBar.leftSidebarActive
-			backend: processing
+		Rectangle {
+			id: sidebarSplitviewWrap
+			color: "transparent"
+			visible: topBar.leftSidebarActive || width > 0
+			SplitView.preferredWidth: width
+			width: topBar.leftSidebarActive ? 450 : 0
+
+			states: [
+				State {
+					name: "open"
+					when: topBar.leftSidebarActive
+					PropertyChanges {
+						target: sidebarSplitviewWrap; width: 450
+					}
+				},
+				State {
+					name: "closed"
+					when: !topBar.leftSidebarActive
+					PropertyChanges {
+						target: sidebarSplitviewWrap; width: 0
+					}
+				}
+			]
+
+			transitions: [
+				Transition {
+					from: "open"
+					to: "closed"
+					SequentialAnimation {
+						NumberAnimation {
+							properties: "width"
+							duration: 500
+							easing.type: Easing.OutExpo
+						}
+						ScriptAction {
+							script: sidebarSplitviewWrap.visible = false
+						}
+					}
+				},
+				Transition {
+					from: "closed"
+					to: "open"
+					SequentialAnimation {
+						ScriptAction {
+							script: sidebarSplitviewWrap.visible = true
+						}
+						NumberAnimation {
+							properties: "width"
+							duration: 500
+							easing.type: Easing.OutExpo
+						}
+					}
+				}
+			]
+
+			ProcessingSidebarWrapper {
+				anchors.fill: parent
+				isActive: topBar.leftSidebarActive
+				backend: processing
+			}
 		}
 
 		ColumnLayout {
-			Layout.fillWidth: true
-			Layout.fillHeight: true
+			SplitView.fillWidth: true
 			spacing: 0
 
 			Graph {
@@ -90,12 +145,10 @@ ApplicationWindow {
 				panMode: topBar.panToggle
 				freedrawMode: topBar.freedrawToggle
 				eraserMode: topBar.eraserToggle
-
 				showGrid: topBar.showGrid
 				showGuides: topBar.showGuide
 				showBestFit: topBar.showBestFit
 				selectedColor: topBar.selectedColor
-
 				brushSize: topBar.brushSize
 				brushDensity: topBar.brushDensity
 			}
@@ -103,7 +156,6 @@ ApplicationWindow {
 			ResultBar {
 				Layout.fillWidth: true
 				implicitHeight: 50
-
 				backend: processing
 			}
 		}
