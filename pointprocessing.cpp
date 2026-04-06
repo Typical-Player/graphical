@@ -57,9 +57,8 @@ QString pointprocessing::resultEquation() const {
 	return _resultEquation;
 }
 
-SidebarResult pointprocessing::resultMatrices() const
-{
-    return _sdRes;
+SidebarResult pointprocessing::resultMatrices() const {
+	return _sdRes;
 }
 
 QScatterSeries* pointprocessing::pointSeries() const {
@@ -118,6 +117,10 @@ void pointprocessing::clear() const {
 	_series->clear();
 }
 
+QString pointprocessing::toFraction(const double x) const {
+	return _worker->calculateEuclideanFraction(x);
+}
+
 void pointprocessing::onWorkerFinished(const Result& result) {
 	_resultEquation = result.eqRes;
 
@@ -132,12 +135,12 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 	_bA = result.betaA;
 	_bB = result.betaB;
 	_bC = result.betaC;
-    _sdRes = result.sr;
+	_sdRes = result.sr;
 
 	resampleFitSeries(_lastXMin, _lastXMax);
 	emit errorChanged();
 	emit resultEquationChanged();
-    emit resultMatricesChanged();
+	emit resultMatricesChanged();
 	setProgress(READY);
 }
 

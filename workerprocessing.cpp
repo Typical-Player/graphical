@@ -1,5 +1,6 @@
 #include "workerprocessing.h"
 #include "pointprocessing.h"
+#include <QMutexLocker>
 
 workerprocessing::workerprocessing(QObject* parent) : QObject(parent) {}
 
@@ -133,6 +134,8 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 
 //? https://stackoverflow.com/questions/26643695/converting-a-floating-point-decimal-value-to-a-fraction
 QString workerprocessing::calculateEuclideanFraction(const double input) {
+	QMutexLocker lock(&_euclideanMutex);
+	
 	const double integer = std::floor(input);
 	const double frac = input - integer;
 

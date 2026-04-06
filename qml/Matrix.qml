@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
+import graphical
 
 Item {
     id: root
@@ -23,6 +24,9 @@ Item {
     readonly property bool compressRows: isCompressed && totalRows > visibleRows
     readonly property bool compressCols: isCompressed && totalCols > visibleColumns
     readonly property string cellSentinel: "dots"
+
+	required property bool useFractions
+	required property PointProcessing backend
 
     function calculateShown(compress: bool, total: int, visible: int): list<var> {
         let r = [];
@@ -63,7 +67,7 @@ Item {
     readonly property var shownColIndices: root.calculateShown(compressCols, totalCols, visibleColumns)
 
 
-    function rowY(slotIndex) {
+    function rowY(slotIndex: int): int {
         return root.calculateCellPos(slotIndex, padY, shownRowIndices, dotRowH, cellH);
     }
 
@@ -84,18 +88,18 @@ Item {
     implicitWidth: gridW + bracketW * 2 + padX * 2
     implicitHeight: gridH + padY * 2
 
-	function colX(slotIndex) {
+	function colX(slotIndex: int): int {
 		let pos = padX + bracketW
 		for (let i = 0; i < slotIndex; i++)
 			pos += root.columnWidths[i]
 		return pos
 	}
 
-	function measureText(text) {
+	function measureText(text: string): int {
 		return fontMetrics.advanceWidth(text)
 	}
 
-	function columnWidth(colIdx) {
+	function columnWidth(colIdx: int): int {
 		if (colIdx === root.cellSentinel) return dotColW
 
 		let maxW = 0
@@ -103,7 +107,7 @@ Item {
 			const rowIdx = root.shownRowIndices[ri]
 			if (rowIdx === root.cellSentinel) continue
 			const val = root.matrixData[rowIdx][colIdx]
-			const text = (typeof val === "number") ? val.toFixed(4) : String(val)
+			const text = (typeof val === "number") ? (root.useFractions ? root.backend.toFraction(val) : val.toFixed(4)) : String(val)
 			const w = root.measureText(text)
 			if (w > maxW) maxW = w
 		}
@@ -205,7 +209,7 @@ Item {
                             return "…";
 
                         const val = root.matrixData[cellRepeater.rowIdx][cellItemDelegate.colIdx];
-                        return (typeof val === "number") ? val.toFixed(4) : String(val);
+                        return (typeof val === "number") ? (root.useFractions ? root.backend.toFraction(val) : val.toFixed(4)) : String(val);
                     }
                 }
             }

@@ -49,6 +49,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -65,6 +67,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -81,6 +85,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -97,6 +103,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -113,6 +121,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -129,6 +139,8 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
@@ -153,6 +165,8 @@ Item {
 				visibleColumns: 3
 				isCompressed: true
 				sizeFactor: 1
+				useFractions: root.backend.useFractions
+				backend: root.backend
 			}
 		}
 
