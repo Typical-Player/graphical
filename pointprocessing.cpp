@@ -212,3 +212,5 @@ void pointprocessing::resampleFitSeries(const double xMin, const double xMax) co
 
 	_fitSeries->replace(points);
 }
+
+#include "moc_pointprocessing.cpp"

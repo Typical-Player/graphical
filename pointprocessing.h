@@ -123,5 +123,4 @@ private:
 	bool _useFractions{};
 };
 
-
 #endif //GRAPHICAL_POINTPROCESSING_H

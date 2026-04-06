@@ -97,8 +97,6 @@ Item {
 	}
 
 	function columnWidth(colIdx: int): int {
-		if (colIdx === root.cellSentinel) return dotColW
-
 		let maxW = 0
 		for (let ri = 0; ri < root.shownRowIndices.length; ri++) {
 			const rowIdx = root.shownRowIndices[ri]

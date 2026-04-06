@@ -241,7 +241,8 @@ void workerprocessing::fillMatrices(Result& res, const g_matrix<double>& X, cons
 	res.sr.ataMat = sliceMatrix(matToStrings(ata_d, useFractions), rRes, cRes, sentinel);
 	res.sr.atainvMat = sliceMatrix(matToStrings(atainv_d, useFractions), rRes, cRes, sentinel);
 	res.sr.atbMat = sliceMatrix(vecToColMat(atb_temp, useFractions), rRes, 1, sentinel);
-	res.sr.resMat = sliceMatrix(vecToColMat(beta, useFractions), rRes, 1, sentinel);}
+	res.sr.resMat = sliceMatrix(vecToColMat(beta, useFractions), rRes, 1, sentinel);
+}
 
 QList<QString> workerprocessing::sliceRow(const QList<QString>& row, const qint64 resolution,
                                           const QString& sentinel) {
@@ -318,3 +319,5 @@ QList<QList<QString>> workerprocessing::matToStrings(const g_matrix<double>& inp
 	}
 	return out;
 }
+
+#include "moc_workerprocessing.cpp"

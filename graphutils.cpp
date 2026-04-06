@@ -105,8 +105,8 @@ void graphutils::recenter() const {
 		if (p.y() > maxY) maxY = p.y();
 	}
 
-	const float padX = std::max((maxX - minX) * 0.1f, 10.0f);
-	const float padY = std::max((maxY - minY) * 0.1f, 10.0f);
+	const float padX = std::max((maxX - minX) * 0.1f, 1.0f);
+	const float padY = std::max((maxY - minY) * 0.1f, 1.0f);
 
 	xAxis()->setMin(minX - padX);
 	xAxis()->setMax(maxX + padX);
@@ -117,3 +117,5 @@ void graphutils::recenter() const {
 bool graphutils::checkValid() const {
 	return _targetSeries || _xAxis || _yAxis;
 }
+
+#include "moc_graphutils.cpp"
