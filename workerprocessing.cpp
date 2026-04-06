@@ -125,9 +125,9 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 	}
 
 	auto beta = solve(X, y);
-
-	fillMatrices(result, X, y, beta);
 	const QList recovered = {std::exp(beta[0]), beta[1]};
+
+	fillMatrices(result, X, y, recovered);
 	compute(points, result, recovered, pointprocessing::EXPONENTIAL, useFractions);
 }
 
