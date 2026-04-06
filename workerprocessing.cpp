@@ -67,7 +67,7 @@ void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, b
 
 	const auto beta = solve(X, y);
 
-	fillMatrices(result, X, y, beta);
+	fillMatrices(result, X, y, beta, useFractions);
 	compute(points, result, beta, pointprocessing::LINEAL, useFractions);
 }
 
@@ -94,7 +94,7 @@ void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result
 
 	const auto beta = solve(X, y);
 
-	fillMatrices(result, X, y, beta);
+	fillMatrices(result, X, y, beta, useFractions);
 	compute(points, result, beta, pointprocessing::CUADRATIC, useFractions);
 }
 
@@ -128,14 +128,12 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 	auto beta = solve(X, y);
 	const QList recovered = {std::exp(beta[0]), beta[1]};
 
-	fillMatrices(result, X, y, recovered);
+	fillMatrices(result, X, y, recovered, useFractions);
 	compute(points, result, recovered, pointprocessing::EXPONENTIAL, useFractions);
 }
 
 //? https://stackoverflow.com/questions/26643695/converting-a-floating-point-decimal-value-to-a-fraction
 QString workerprocessing::calculateEuclideanFraction(const double input) {
-	QMutexLocker lock(&_euclideanMutex);
-	
 	const double integer = std::floor(input);
 	const double frac = input - integer;
 
@@ -227,25 +225,96 @@ QList<double> workerprocessing::solve(const g_matrix<double>& X, const QList<dou
 }
 
 void workerprocessing::fillMatrices(Result& res, const g_matrix<double>& X, const QList<double>& Y,
-                                    const QList<double>& beta) {
-	res.sr.aMat = X._data;
-	res.sr.bMat = QList<QList<double>>();
-	res.sr.bMat.push_back(Y);
+                                    const QList<double>& beta, const bool useFractions) {
+	const QString sentinel = "dots";
+	const qint64 rRes = res.sr.rowResolution;
+	const qint64 cRes = res.sr.colResolution;
 
-	const auto ata = X.transpose() * X;
-	const auto atainv = ata.inverse();
+	auto at_d = X.transpose();
+	const auto ata_d = at_d * X;
+	const auto atainv_d = ata_d.inverse();
+	const auto atb_temp = at_d * Y;
 
-	res.sr.atMat = X.transpose()._data;
-	res.sr.ataMat = ata._data;
-	res.sr.atainvMat = atainv._data;
-	res.sr.atbMat = QList<QList<double>>();
-	res.sr.atbMat.push_back(X.transpose() * Y);
+	res.sr.aMat = sliceMatrix(matToStrings(X, useFractions), rRes, cRes, sentinel);
+	res.sr.bMat = sliceMatrix(vecToColMat(Y, useFractions), rRes, 1, sentinel);
+	res.sr.atMat = sliceMatrix(matToStrings(at_d, useFractions), rRes, cRes, sentinel);
+	res.sr.ataMat = sliceMatrix(matToStrings(ata_d, useFractions), rRes, cRes, sentinel);
+	res.sr.atainvMat = sliceMatrix(matToStrings(atainv_d, useFractions), rRes, cRes, sentinel);
+	res.sr.atbMat = sliceMatrix(vecToColMat(atb_temp, useFractions), rRes, 1, sentinel);
+	res.sr.resMat = sliceMatrix(vecToColMat(beta, useFractions), rRes, 1, sentinel);}
 
-	res.sr.resMat = QList<QList<double>>();
-	res.sr.resMat.push_back(beta);
+QList<QString> workerprocessing::sliceRow(const QList<QString>& row, const qint64 resolution,
+                                          const QString& sentinel) {
+	const qint64 total = row.size();
+	if (total <= resolution) return row;
+
+	const qint64 half = resolution / 2;
+	QList<QString> result;
+	result.reserve(resolution + 1);
+
+	for (qint64 i = 0; i < half; i++) result.push_back(row[i]);
+
+	result.push_back(sentinel);
+
+	for (qint64 i = total - half; i < total; i++) result.push_back(row[i]);
+
+	return result;
+}
+
+QList<QList<QString>> workerprocessing::sliceMatrix(const QList<QList<QString>>& mat,
+                                                    const qint64 rowRes, const qint64 colRes,
+                                                    const QString& sentinel) {
+	const qint64 totalRows = mat.size();
+	QList<QList<QString>> result;
+
+	auto processRow = [&](const qint64 rowIdx) {
+		result.push_back(sliceRow(mat[rowIdx], colRes, sentinel));
+	};
+
+	if (totalRows <= rowRes) {
+		for (qint64 i = 0; i < totalRows; i++) processRow(i);
+		return result;
+	}
+
+	const qint64 half = rowRes / 2;
+
+	for (qint64 i = 0; i < half; i++) processRow(i);
+
+	QList<QString> sentinelRow;
+	const qint64 slicedCols = std::min(totalRows > 0 ? mat[0].size() : 0LL,
+	                                   colRes) + (mat[0].size() > colRes ? 1 : 0);
+
+	for (qint64 i = 0; i < slicedCols; i++) sentinelRow.push_back(sentinel);
+
+	result.push_back(sentinelRow);
+
+	for (qint64 i = totalRows - half; i < totalRows; i++) processRow(i);
+
+	return result;
 }
 
 QString workerprocessing::prettyPrint(const double number, const bool useFractions) {
 	if (!useFractions) return QString("%1").arg(number, 0, 'f', 4);
 	return calculateEuclideanFraction(number);
+}
+
+QList<QList<QString>> workerprocessing::vecToColMat(const QList<double>& input, const bool useFractions) {
+	QList<QList<QString>> out;
+	for (const auto& d : std::as_const(input)) {
+		out.push_back({prettyPrint(std::round(d * 1000.0) / 1000.0, useFractions)});
+	}
+	return out;
+}
+
+QList<QList<QString>> workerprocessing::matToStrings(const g_matrix<double>& input, const bool useFractions) {
+	QList<QList<QString>> out;
+	for (const auto& row : std::as_const(input._data)) {
+		QList<QString> rowStr;
+		std::transform(row.begin(), row.end(), std::back_inserter(rowStr),
+		               [&](const double x) {
+			               return prettyPrint(std::round(x * 1000.0) / 1000.0, useFractions);
+		               });
+		out.push_back(rowStr);
+	}
+	return out;
 }

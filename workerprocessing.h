@@ -13,7 +13,6 @@ public:
 	explicit workerprocessing(QObject* parent = nullptr);
 
 	void requestCancellation();
-	[[nodiscard]] QString calculateEuclideanFraction(double input);
 
 public slots:
 	void run(const QList<QPointF>& points, pointprocessing::PlotType plotType, bool useFractions);
@@ -32,15 +31,25 @@ private:
 
 	[[nodiscard]] static long gcd(long a, long b);
 
-	void compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
-	             pointprocessing::PlotType plotType, bool useFractions);
+	static void compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
+	                    pointprocessing::PlotType plotType, bool useFractions);
 	[[nodiscard]] static QList<double> solve(const g_matrix<double>& X, const QList<double>& Y);
+	[[nodiscard]] static QString calculateEuclideanFraction(double input);
 
-	static void fillMatrices(Result& res, const g_matrix<double>& X, const QList<double>& Y, const QList<double>& beta);
+	static void fillMatrices(Result& res, const g_matrix<double>& X, const QList<double>& Y, const QList<double>& beta,
+	                         bool useFractions);
 
-	[[nodiscard]] QString prettyPrint(double number, bool useFractions);
+	[[nodiscard]] static QString prettyPrint(double number, bool useFractions);
 
-	QMutex _euclideanMutex{};
+	[[nodiscard]] static QList<QList<QString>> vecToColMat(const QList<double>& input, bool useFractions);
+	[[nodiscard]] static QList<QList<QString>> matToStrings(const g_matrix<double>& input, bool useFractions);
+
+	[[nodiscard]] static QList<QString> sliceRow(const QList<QString>& row, qint64 resolution,
+	                                             const QString& sentinel);
+	[[nodiscard]] static QList<QList<QString>> sliceMatrix(const QList<QList<QString>>& mat,
+	                                                       qint64 rowRes, qint64 colRes,
+	                                                       const QString& sentinel);
+
 	QAtomicInt _canceled{0};
 };
 

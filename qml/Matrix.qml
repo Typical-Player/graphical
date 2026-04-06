@@ -25,9 +25,6 @@ Item {
     readonly property bool compressCols: isCompressed && totalCols > visibleColumns
     readonly property string cellSentinel: "dots"
 
-	required property bool useFractions
-	required property PointProcessing backend
-
     function calculateShown(compress: bool, total: int, visible: int): list<var> {
         let r = [];
 
@@ -106,9 +103,7 @@ Item {
 		for (let ri = 0; ri < root.shownRowIndices.length; ri++) {
 			const rowIdx = root.shownRowIndices[ri]
 			if (rowIdx === root.cellSentinel) continue
-			const val = root.matrixData[rowIdx][colIdx]
-			const text = (typeof val === "number") ? (root.useFractions ? root.backend.toFraction(val) : val.toFixed(4)) : String(val)
-			const w = root.measureText(text)
+			const w = root.measureText(root.matrixData[rowIdx][colIdx])
 			if (w > maxW) maxW = w
 		}
 		return Math.max(maxW + Math.round(16 * sizeFactor), Math.round(32 * sizeFactor))
@@ -208,8 +203,7 @@ Item {
                         if (cellItemDelegate.isEllipsisCol)
                             return "…";
 
-                        const val = root.matrixData[cellRepeater.rowIdx][cellItemDelegate.colIdx];
-                        return (typeof val === "number") ? (root.useFractions ? root.backend.toFraction(val) : val.toFixed(4)) : String(val);
+                        return root.matrixData[cellRepeater.rowIdx][cellItemDelegate.colIdx];
                     }
                 }
             }

@@ -117,10 +117,6 @@ void pointprocessing::clear() const {
 	_series->clear();
 }
 
-QString pointprocessing::toFraction(const double x) const {
-	return _worker->calculateEuclideanFraction(x);
-}
-
 void pointprocessing::onWorkerFinished(const Result& result) {
 	_resultEquation = result.eqRes;
 

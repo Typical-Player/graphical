@@ -44,12 +44,12 @@ Dialog {
 		NumberAnimation {
 			property: "opacity";
 			from: 0.0;
-			to: 1.0; duration: 180
+			to: 1.0; duration: 500; easing.type: Easing.OutExpo
 		}
 		NumberAnimation {
 			property: "scale";
 			from: 0.5;
-			to: 1.0; duration: 180; easing.type: Easing.OutExpo
+			to: 1.0; duration: 500; easing.type: Easing.OutExpo
 		}
 	}
 
@@ -57,7 +57,7 @@ Dialog {
 		NumberAnimation {
 			property: "opacity";
 			from: 1.0;
-			to: 0.0; duration: 180
+			to: 0.0; duration: 150; easing.type: Easing.OutExpo
 		}
 	}
 }

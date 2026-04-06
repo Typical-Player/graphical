@@ -73,8 +73,6 @@ public:
 
 	Q_INVOKABLE void clear() const;
 
-	Q_INVOKABLE [[nodiscard]] QString toFraction(double x) const;
-
 private slots:
 	void onWorkerFinished(const Result& result);
 	void onWorkerError(const QString& err);

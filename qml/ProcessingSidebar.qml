@@ -49,8 +49,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -67,8 +65,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -85,8 +81,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -103,8 +97,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -121,8 +113,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -139,8 +129,6 @@ Item {
 				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: root.matrixSizeFact
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
@@ -161,12 +149,10 @@ Item {
 
 			Matrix {
 				matrixData: root.rm.resMat
-				visibleRows: 1
-				visibleColumns: 3
+				visibleRows: root.rm.rowResolution
+				visibleColumns: root.rm.colResolution
 				isCompressed: true
 				sizeFactor: 1
-				useFractions: root.backend.useFractions
-				backend: root.backend
 			}
 		}
 
