@@ -22,6 +22,7 @@ qt_add_executable(appgraphical
         workerprocessing.h
         result.h
         matrix.h
+        third_party/lttb.hpp
 )
 
 qt_add_qml_module(appgraphical

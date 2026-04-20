@@ -44,7 +44,7 @@ Rectangle {
 
 	GraphUtils {
 		id: graphUtils
-		targetSeries: root.backend.pointSeries
+		backend: root.backend
 		xAxis: xA
 		yAxis: yA
 		plotArea: view.plotArea
@@ -97,6 +97,10 @@ Rectangle {
 			onMaxChanged: {
 				root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
 			}
+		}
+
+		onPlotAreaChanged: {
+			root.backend.plotArea = view.plotArea;
 		}
 
 		Component.onCompleted: {

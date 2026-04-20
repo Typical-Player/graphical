@@ -54,7 +54,7 @@ Item {
 		}
 
 		Label {
-			text: "Graphical (0.7.5b)"
+			text: "Graphical (0.8b)"
 			font.family: "Helvetica"
 			font.bold: true
 		}
@@ -99,6 +99,23 @@ Item {
 				font.family: "Helvetica"
 				font.pointSize: 7
 				anchors.verticalCenter: gffnotice.verticalCenter
+			}
+		}
+
+		Row {
+			spacing: 4
+			Label {
+				id: lttbcppnotice
+				text: "lttb-cpp C++ LTTB downsampling algorithm library"
+				font.family: "Helvetica"
+				font.bold: true
+			}
+
+			Label {
+				text: "MIT License"
+				font.family: "Helvetica"
+				font.pointSize: 7
+				anchors.verticalCenter: lttbcppnotice.verticalCenter
 			}
 		}
 

@@ -249,6 +249,23 @@ Rectangle {
 			Layout.fillWidth: true
 		}
 
+		Label {
+			visible: performanceOptions.currentIndex === 0
+			text: "Automatic: " + (root.backend.resolvedPerformance === 1 ? "High performance" : "Low performance")
+			color: colorPallete.text
+			font.pointSize: 8
+			font.family: "Helvetica"
+		}
+
+		ComboBox {
+			id: performanceOptions
+			model: ["Automatic", "High performance", "Low performance", "No optimizations"]
+			onCurrentIndexChanged: root.backend.performanceMode = currentIndex
+		}
+
+		ToolSeparator {
+		}
+
 		Image {
 			id: logo
 			source: "qrc:/icons/logo.svg"

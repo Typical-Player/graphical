@@ -12,15 +12,15 @@ void graphutils::setPlotArea(const QRectF& plotArea) {
 	emit plotAreaChanged();
 }
 
-QScatterSeries* graphutils::targetSeries() const {
-	return _targetSeries;
+pointprocessing* graphutils::backend() const {
+	return _backend;
 }
 
-void graphutils::setTargetSeries(QScatterSeries* targetSeries) {
-	if (_targetSeries == targetSeries) return;
+void graphutils::setBackend(pointprocessing* backend) {
+	if (_backend == backend) return;
 
-	_targetSeries = targetSeries;
-	emit targetSeriesChanged();
+	_backend = backend;
+	emit backendChanged();
 }
 
 QValueAxis* graphutils::xAxis() const {
@@ -52,7 +52,7 @@ void graphutils::addPoint(const qint64 mouseX, const qint64 mouseY, const qint64
 
 	const auto baseX = _xAxis->min() + (mouseX - _plotArea.x()) * scaleX;
 	const auto baseY = _yAxis->max() - (mouseY - _plotArea.y()) * scaleY;
-
+	QList<QPointF> pts;
 	for (qint64 i = 0; i < count; ++i) {
 		auto wx = baseX;
 		auto wy = baseY;
@@ -65,8 +65,10 @@ void graphutils::addPoint(const qint64 mouseX, const qint64 mouseY, const qint64
 			wy += std::sin(angle) * r * scaleY;
 		}
 
-		_targetSeries->append(wx, wy);
+		pts.append({wx, wy});
 	}
+
+	_backend->addPoints(pts);
 }
 
 void graphutils::erasePoints(const qint64 mouseX, const qint64 mouseY, const qint64 brushSize) const {
@@ -77,28 +79,28 @@ void graphutils::erasePoints(const qint64 mouseX, const qint64 mouseY, const qin
 
 	const auto cX = _xAxis->min() + (mouseX - _plotArea.x()) / _plotArea.width() * (_xAxis->max() - _xAxis->min());
 	const auto cY = _yAxis->max() - (mouseY - _plotArea.y()) / _plotArea.height() * (_yAxis->max() - _yAxis->min());
-	auto keep = QList<QPointF>();
-
-	for (qint64 i = 0; i < _targetSeries->count(); ++i) {
-		auto p = _targetSeries->at(i);
+	QList<QPointF> keep;
+	for (const auto& p : _backend->allPoints()) {
 		const auto dx = (p.x() - cX) / radX;
 
-		if (const auto dy = (p.y() - cY) / radY; dx * dx + dy * dy > 1.0) keep.push_back(p);
+		if (const auto dy = (p.y() - cY) / radY; dx * dx + dy * dy > 1.0)
+			keep.push_back(p);
 	}
 
-	_targetSeries->replace(keep);
+	_backend->setAllPoints(keep);
 }
 
 void graphutils::recenter() const {
 	if (!checkValid()) return;
-	if (_targetSeries->count() == 0) return;
+	const auto& pts = _backend->allPoints();
+	if (pts.count() == 0) return;
 
 	auto minX = INFINITY;
 	auto minY = INFINITY;
 	auto maxX = -INFINITY;
 	auto maxY = -INFINITY;
-	for (qint64 i = 0; i < _targetSeries->count(); ++i) {
-		auto p = _targetSeries->at(i);
+	for (qint64 i = 0; i < pts.count(); ++i) {
+		auto p = pts.at(i);
 		if (p.x() < minX) minX = p.x();
 		if (p.x() > maxX) maxX = p.x();
 		if (p.y() < minY) minY = p.y();
@@ -115,7 +117,7 @@ void graphutils::recenter() const {
 }
 
 bool graphutils::checkValid() const {
-	return _targetSeries || _xAxis || _yAxis;
+	return _backend && _xAxis && _yAxis;
 }
 
 #include "moc_graphutils.cpp"

@@ -5,18 +5,18 @@ import graphical
 
 ApplicationWindow {
 	id: root
-	width: 900
+	width: 1300
 	height: 512
 	visible: true
 	title: "Graphical"
 
-	minimumWidth: 900
+	minimumWidth: 1300
 	minimumHeight: 512
 
 	GraphicalDialog {
 		id: aboutDialog
 		width: 500
-		height: 350
+		height: 380
 
 		Loader {
 			active: aboutDialog.enabled

@@ -1,5 +1,6 @@
 #include "pointprocessing.h"
 #include "workerprocessing.h"
+#include "third_party/lttb.hpp"
 
 pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_workerThread = new QThread(this);
@@ -22,12 +23,20 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_debounceTimer->setInterval(1000);
 	_debounceTimer->setSingleShot(true);
 
-	connect(_series, &QScatterSeries::pointReplaced, this, &pointprocessing::onDataChanged);
-	connect(_series, &QScatterSeries::pointsReplaced, this, &pointprocessing::onDataChanged);
-	connect(_series, &QScatterSeries::pointAdded, this, &pointprocessing::onDataChanged);
-	connect(_series, &QScatterSeries::pointRemoved, this, &pointprocessing::onDataChanged);
+	_autoCheckTimer = new QTimer(this);
+	_autoCheckTimer->setInterval(1000);
+	_autoCheckTimer->setSingleShot(false);
+	connect(_autoCheckTimer, &QTimer::timeout, this, &pointprocessing::evaluateAutoPerformance);
+	_autoCheckTimer->start();
+
+	_resizeTimer = new QTimer(this);
+	_resizeTimer->setInterval(500);
+	_resizeTimer->setSingleShot(true);
+
+	connect(this, &pointprocessing::dataChanged, this, &pointprocessing::onDataChanged);
 	connect(this, &pointprocessing::plotTypeChanged, this, &pointprocessing::onDataChanged);
 	connect(this, &pointprocessing::useFractionsChanged, this, &pointprocessing::onDataChanged);
+	connect(this, &pointprocessing::performanceModeChanged, this, &pointprocessing::onPeformanceModeChanged);
 
 	connect(_debounceTimer, &QTimer::timeout, this, &pointprocessing::fireWorker);
 
@@ -102,19 +111,80 @@ void pointprocessing::setUseFractions(const bool useFractions) {
 	emit useFractionsChanged();
 }
 
+QRectF pointprocessing::plotArea() const {
+	return _plotArea;
+}
+
+void pointprocessing::setPlotArea(const QRectF& plotArea) {
+	if (_plotArea == plotArea) return;
+
+	_lagSampleCount = 0;
+	_frameTimer.restart();
+	_resizeTimer->start();
+
+	_plotArea = plotArea;
+	emit plotAreaChanged();
+}
+
+pointprocessing::PerformanceMode pointprocessing::performanceMode() const {
+	return _performanceMode;
+}
+
+void pointprocessing::setPerformanceMode(const PerformanceMode performanceMode) {
+	if (_performanceMode == performanceMode) return;
+
+	_performanceMode = performanceMode;
+	emit performanceModeChanged();
+}
+
+pointprocessing::PerformanceMode pointprocessing::resolvedPerformance() const {
+	return _resolvedMode;
+}
+
+void pointprocessing::addPoint(const QPointF& point) {
+	_allPoints.append(point);
+	resampleDisplaySeries(_lastXMin, _lastXMax);
+	emit dataChanged();
+}
+
+void pointprocessing::addPoints(const QList<QPointF>& points) {
+	_allPoints.append(points);
+	resampleDisplaySeries(_lastXMin, _lastXMax);
+	emit dataChanged();
+}
+
+void pointprocessing::removePoint(const qint64 idx) {
+	_allPoints.removeAt(idx);
+	resampleDisplaySeries(_lastXMin, _lastXMax);
+	emit dataChanged();
+}
+
 void pointprocessing::updateFitRange(const double xMin, const double xMax, const double yMin, const double yMax) {
 	_lastXMin = xMin;
 	_lastXMax = xMax;
 	_YMax = yMax;
 	_YMin = yMin;
 
+	resampleDisplaySeries(xMin, xMax);
+
 	if (_progress != READY) return;
 	resampleFitSeries(xMin, xMax);
 }
 
-void pointprocessing::clear() const {
+void pointprocessing::clear() {
 	_fitSeries->clear();
+	_allPoints.clear();
 	_series->clear();
+}
+
+const QList<QPointF>& pointprocessing::allPoints() const {
+	return _allPoints;
+}
+
+void pointprocessing::setAllPoints(const QList<QPointF>& points) {
+	_allPoints = points;
+	resampleDisplaySeries(_lastXMin, _lastXMax);
+	emit dataChanged();
 }
 
 void pointprocessing::onWorkerFinished(const Result& result) {
@@ -166,11 +236,16 @@ void pointprocessing::onDataChanged() {
 	_debounceTimer->start();
 }
 
+void pointprocessing::onPeformanceModeChanged() {
+	_lagSampleCount = 0;
+	resampleDisplaySeries(_lastXMin, _lastXMax);
+}
+
 void pointprocessing::fireWorker() {
 	_pendingRestart = false;
 	setProgress(PROCESSING);
 
-	emit requestRun(_series->points(), _plotType, _useFractions);
+	emit requestRun(_allPoints, _plotType, _useFractions);
 }
 
 void pointprocessing::setProgress(const Progress progress) {
@@ -211,6 +286,128 @@ void pointprocessing::resampleFitSeries(const double xMin, const double xMax) co
 	}
 
 	_fitSeries->replace(points);
+}
+
+QList<QPointF> pointprocessing::decimate(const QList<QPointF>& points, const double xMin, const double xMax,
+                                         const int maxPoints) {
+	struct Point {
+		qreal x, y;
+	};
+	using Lttb = LargestTriangleThreeBuckets<Point, qreal, &Point::x, &Point::y>;
+
+	QList<Point> visible;
+	visible.reserve(points.size());
+	for (const auto& p : points)
+		if (p.x() >= xMin && p.x() <= xMax)
+			visible.append({p.x(), p.y()});
+
+	QList<Point> out;
+	out.resize(qMin(maxPoints, visible.size()));
+	Lttb::Downsample(visible.data(), visible.size(), out.data(), out.size());
+
+	QList<QPointF> result;
+	result.reserve(out.size());
+	for (const auto& [x, y] : out)
+		result.append({x, y});
+
+	return result;
+}
+
+void pointprocessing::resampleDisplaySeries(const double xMin, const double xMax) {
+	_frameTimer.restart();
+
+	const PerformanceMode effective = (_performanceMode == AUTOMATIC)
+		                                  ? _resolvedMode
+		                                  : _performanceMode;
+
+	if (_performanceMode == ORIGINAL) {
+		_series->replace(_allPoints);
+		this->_frameTimer.restart();
+		return;
+	}
+
+	const double cellPx = (effective == LOWPERFORMANCE) ? 25.0 : 15.0;
+	const qint64 lttbThreshold = (effective == LOWPERFORMANCE) ? 5000 : 20000;
+	const int lttbCap = (effective == LOWPERFORMANCE) ? LOW_MAX_POINTS : HIGH_MAX_POINTS;
+
+	QList<QPointF> visible;
+	visible.reserve(_allPoints.size());
+	for (const auto& p : _allPoints)
+		if (p.x() >= xMin && p.x() <= xMax)
+			visible.append(p);
+
+	const QList<QPointF> reduced = reducePointClouds(
+		visible, xMin, xMax, _YMin, _YMax,
+		QSizeF(_plotArea.width(), _plotArea.height()),
+		cellPx
+	);
+
+	if (reduced.size() <= lttbThreshold)
+		_series->replace(reduced);
+	else
+		_series->replace(decimate(reduced, xMin, xMax, lttbCap));
+
+	_frameTimer.restart();
+}
+
+QList<QPointF> pointprocessing::reducePointClouds(const QList<QPointF>& points, const double xMin, const double xMax,
+                                                  const double yMin,
+                                                  const double yMax, const QSizeF& plotSizePx, const qint64 cellPx) {
+	const double cellW = cellPx * (xMax - xMin) / plotSizePx.width();
+	const double cellH = cellPx * (yMax - yMin) / plotSizePx.height();
+
+	if (cellW <= 0 || cellH <= 0)
+		return points;
+
+	struct Bucket {
+		double sumX = 0, sumY = 0;
+		int count = 0;
+	};
+
+	QHash<QPair<int, int>, Bucket> grid;
+
+	for (const auto& p : points) {
+		const int col = static_cast<int>(std::floor(p.x() / cellW));
+		const int row = static_cast<int>(std::floor(p.y() / cellH));
+		auto& [sumX, sumY, count] = grid[qMakePair(col, row)];
+		sumX += p.x();
+		sumY += p.y();
+		count++;
+	}
+
+	QList<QPointF> result;
+	result.reserve(grid.size());
+	for (const auto& [sumX, sumY, count] : grid)
+		result.append({sumX / count, sumY / count});
+
+	return result;
+}
+
+void pointprocessing::evaluateAutoPerformance() {
+	if (_performanceMode != AUTOMATIC) return;
+
+	const PerformanceMode previous = _resolvedMode;
+
+	if (_allPoints.size() > AUTO_POINT_THRESHOLD) {
+		_resolvedMode = LOWPERFORMANCE;
+	}
+	else if (!_resizeTimer->isActive()) {
+		if (const qint64 elapsed = _frameTimer.elapsed(); elapsed > LAG_THRESHOLD_MS) {
+			_lagSampleCount++;
+			if (_lagSampleCount >= LAG_SAMPLES_NEEDED)
+				_resolvedMode = LOWPERFORMANCE;
+		}
+		else {
+			_lagSampleCount = qMax(0, _lagSampleCount - 1);
+			if (_lagSampleCount == 0)
+				_resolvedMode = HIGHPERFORMANCE;
+		}
+	}
+
+	if (_resolvedMode != previous) {
+		resampleDisplaySeries(_lastXMin, _lastXMax);
+		emit resolvedPerformanceChanged();
+	}
 }
 
 #include "moc_pointprocessing.cpp"

@@ -1,17 +1,15 @@
 #ifndef GRAPHICAL_GRAPHUTILS_H
 #define GRAPHICAL_GRAPHUTILS_H
 #include <QtQmlIntegration/qqmlintegration.h>
-#include <QScatterSeries>
 #include <QValueAxis>
-#include <QRectF>
 #include <QRandomGenerator>
+#include "pointprocessing.h"
 
 class graphutils : public QObject {
 	Q_OBJECT
 	QML_ELEMENT
 	QML_NAMED_ELEMENT(GraphUtils)
-	Q_PROPERTY(
-		QScatterSeries* targetSeries READ targetSeries WRITE setTargetSeries NOTIFY targetSeriesChanged REQUIRED FINAL)
+	Q_PROPERTY(pointprocessing* backend READ backend WRITE setBackend NOTIFY backendChanged REQUIRED FINAL)
 	Q_PROPERTY(QValueAxis* xAxis READ xAxis WRITE setXAxis NOTIFY xAxisChanged REQUIRED FINAL)
 	Q_PROPERTY(QValueAxis* yAxis READ yAxis WRITE setYAxis NOTIFY yAxisChanged REQUIRED FINAL)
 	Q_PROPERTY(QRectF plotArea READ plotArea WRITE setPlotArea NOTIFY plotAreaChanged REQUIRED FINAL)
@@ -22,8 +20,8 @@ public:
 	[[nodiscard]] QRectF plotArea() const;
 	void setPlotArea(const QRectF& plotArea);
 
-	[[nodiscard]] QScatterSeries* targetSeries() const;
-	void setTargetSeries(QScatterSeries* targetSeries);
+	[[nodiscard]] pointprocessing* backend() const;
+	void setBackend(pointprocessing* backend);
 
 	[[nodiscard]] QValueAxis* xAxis() const;
 	void setXAxis(QValueAxis* xAxis);
@@ -37,7 +35,7 @@ public:
 	Q_INVOKABLE void recenter() const;
 
 signals:
-	void targetSeriesChanged();
+	void backendChanged();
 	void xAxisChanged();
 	void yAxisChanged();
 	void plotAreaChanged();
@@ -45,7 +43,7 @@ signals:
 private:
 	[[nodiscard]] bool checkValid() const;
 
-	QScatterSeries* _targetSeries{};
+	pointprocessing* _backend{};
 	QValueAxis* _xAxis{};
 	QValueAxis* _yAxis{};
 	QRectF _plotArea{};
