@@ -68,6 +68,7 @@ Rectangle {
 			grid.subColor: "#CECECE"
 			grid.subWidth: 1
 			backgroundColor: colorPallete.window
+			labelTextColor: colorPallete.text
 
 			gridVisible: root.showGrid
 		}

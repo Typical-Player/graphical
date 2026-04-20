@@ -9,10 +9,6 @@ Item {
 	required property PointProcessing backend
 	property bool isActive: false
 
-	ColorGroup {
-		id: colorPallete
-	}
-
 	Component {
 		id: processingSidebarComponent
 		ProcessingSidebar {
@@ -27,7 +23,7 @@ Item {
 		y: root.y
 		height: root.height
 		width: root.width
-		color: colorPallete.base
+		color: "white"
 
 		Flickable {
 			anchors.fill: parent

@@ -2,253 +2,274 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQuick.Effects
 import QtGraphs
 import graphical
 
 Rectangle {
-    id: root
+	id: root
 
-    required property PointProcessing backend
-    required property ValueAxis xAxis
-    required property ValueAxis yAxis
+	required property PointProcessing backend
+	required property ValueAxis xAxis
+	required property ValueAxis yAxis
 
-    readonly property color selectedColor: selectedColorDialog.selectedColor
+	readonly property color selectedColor: selectedColorDialog.selectedColor
 
-    readonly property bool panToggle: pantoggle.checked
-    readonly property bool freedrawToggle: freedrawtoggle.checked
-    readonly property bool eraserToggle: erasertoggle.checked
+	readonly property bool panToggle: pantoggle.checked
+	readonly property bool freedrawToggle: freedrawtoggle.checked
+	readonly property bool eraserToggle: erasertoggle.checked
 
-    readonly property bool showBestFit: showBestFitToggle.checked
-    readonly property bool showGuide: showGuideToggle.checked
-    readonly property bool showGrid: showGridToggle.checked
-    readonly property bool useFractions: useFractionsToggle.checked
+	readonly property bool showBestFit: showBestFitToggle.checked
+	readonly property bool showGuide: showGuideToggle.checked
+	readonly property bool showGrid: showGridToggle.checked
+	readonly property bool useFractions: useFractionsToggle.checked
 
-    readonly property int brushSize: brushSizeList.brushSize
-    readonly property int brushDensity: brushSizeList.brushDensity
+	readonly property int brushSize: brushSizeList.brushSize
+	readonly property int brushDensity: brushSizeList.brushDensity
 
-    readonly property bool leftSidebarActive: leftSidebarToggle.checked
+	readonly property bool leftSidebarActive: leftSidebarToggle.checked
 
-    property int spacing: 4
+	property int spacing: 4
 
-    ColorDialog {
-        id: selectedColorDialog
-        selectedColor: "blue"
-    }
+	ColorGroup {
+		id: colorPallete
+	}
 
-    color: "transparent"
+	ColorDialog {
+		id: selectedColorDialog
+		selectedColor: "blue"
+	}
 
-    signal logoClicked
+	color: "transparent"
 
-    signal recenterClicked
+		signal
+	logoClicked
 
-    RowLayout {
-        anchors.fill: parent
-        spacing: root.spacing
+		signal
+	recenterClicked
 
-        ToolButton {
-            id: leftSidebarToggle
-            checkable: true
+	RowLayout {
+		anchors.fill: parent
+		spacing: root.spacing
 
-            icon.source: "qrc:/icons/opensidebar.svg"
-        }
+		ToolButton {
+			id: leftSidebarToggle
+			checkable: true
 
-        ToolSeparator {}
+			icon.source: "qrc:/icons/opensidebar.svg"
+			icon.color: colorPallete.text
+		}
 
-        ComboBox {
-            model: ["Lineal", "Cuadratic", "Exponential"]
-            onCurrentIndexChanged: root.backend.plotType = currentIndex
-        }
+		ToolSeparator {
+		}
 
-        ToolSeparator {}
+		ComboBox {
+			model: ["Lineal", "Cuadratic", "Exponential"]
+			onCurrentIndexChanged: root.backend.plotType = currentIndex
+		}
 
-        ToolButton {
-            onClicked: {
-                root.backend.clear();
-                root.xAxis.min = 0;
-                root.xAxis.max = 100;
-                root.yAxis.min = 0;
-                root.yAxis.max = 100;
-            }
+		ToolSeparator {
+		}
 
-            icon.source: "qrc:/icons/clear.svg"
+		ToolButton {
+			onClicked: {
+				root.backend.clear();
+				root.xAxis.min = 0;
+				root.xAxis.max = 100;
+				root.yAxis.min = 0;
+				root.yAxis.max = 100;
+			}
 
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Clear"
-        }
+			icon.source: "qrc:/icons/clear.svg"
 
-        ToolButton {
-            enabled: root.backend.pointSeries.count > 0
-            onClicked: root.recenterClicked()
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Clear"
+			icon.color: colorPallete.text
+		}
 
-            icon.source: "qrc:/icons/recenter.svg"
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Re-center"
-        }
+		ToolButton {
+			enabled: root.backend.pointSeries.count > 0
+			onClicked: root.recenterClicked()
 
-        ToolSeparator {}
+			icon.source: "qrc:/icons/recenter.svg"
+			icon.color: colorPallete.text
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Re-center"
+		}
 
-        ButtonGroup {
-            buttons: toggleModes.children
-            exclusive: true
-        }
+		ToolSeparator {
+		}
 
-        Row {
-            id: toggleModes
-            spacing: 4
+		ButtonGroup {
+			buttons: toggleModes.children
+			exclusive: true
+		}
 
-            ToolButton {
-                id: pantoggle
-                checkable: true
-                checked: true
-                icon.source: "qrc:/icons/drag.svg"
+		Row {
+			id: toggleModes
+			spacing: 4
 
-                ToolTip.delay: 1000
-                ToolTip.visible: hovered
-                ToolTip.text: "Drag mode"
-            }
+			ToolButton {
+				id: pantoggle
+				checkable: true
+				checked: true
+				icon.source: "qrc:/icons/drag.svg"
+				icon.color: colorPallete.text
+				ToolTip.delay: 1000
+				ToolTip.visible: hovered
+				ToolTip.text: "Drag mode"
+			}
 
-            ToolButton {
-                id: freedrawtoggle
-                checkable: true
-                icon.source: "qrc:/icons/freedraw.svg"
+			ToolButton {
+				id: freedrawtoggle
+				checkable: true
+				icon.source: "qrc:/icons/freedraw.svg"
+				icon.color: colorPallete.text
+				ToolTip.delay: 1000
+				ToolTip.visible: hovered
+				ToolTip.text: "Freedraw mode"
+			}
 
-                ToolTip.delay: 1000
-                ToolTip.visible: hovered
-                ToolTip.text: "Freedraw mode"
-            }
+			ToolButton {
+				id: erasertoggle
+				checkable: true
+				icon.source: "qrc:/icons/eraser.svg"
+				icon.color: colorPallete.text
+				ToolTip.delay: 1000
+				ToolTip.visible: hovered
+				ToolTip.text: "Eraser mode"
+			}
+		}
 
-            ToolButton {
-                id: erasertoggle
-                checkable: true
-                icon.source: "qrc:/icons/eraser.svg"
+		ToolSeparator {
+		}
 
-                ToolTip.delay: 1000
-                ToolTip.visible: hovered
-                ToolTip.text: "Eraser mode"
-            }
-        }
+		ToolButton {
+			id: showBestFitToggle
+			checkable: true
+			checked: true
 
-        ToolSeparator {}
+			icon.source: "qrc:/icons/bestfit.svg"
+			icon.color: colorPallete.text
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show best fit"
+		}
 
-        ToolButton {
-            id: showBestFitToggle
-            checkable: true
-            checked: true
+		ToolButton {
+			id: showGuideToggle
+			checkable: true
 
-            icon.source: "qrc:/icons/bestfit.svg"
+			icon.source: "qrc:/icons/showguides.svg"
+			icon.color: colorPallete.text
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show guides"
+		}
 
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Show best fit"
-        }
+		ToolButton {
+			id: showGridToggle
+			icon.source: "qrc:/icons/showgrid.svg"
+			icon.color: colorPallete.text
+			checkable: true
+			checked: true
 
-        ToolButton {
-            id: showGuideToggle
-            checkable: true
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show grid"
+		}
 
-            icon.source: "qrc:/icons/showguides.svg"
+		ToolSeparator {
+		}
 
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Show guides"
-        }
+		ToolButton {
+			id: useFractionsToggle
+			checkable: true
+			icon.source: "qrc:/icons/division.svg"
+			icon.color: colorPallete.text
+			ToolTip.delay: 1000
+			ToolTip.visible: hovered
+			ToolTip.text: "Show fractions"
+		}
 
-        ToolButton {
-            id: showGridToggle
-            icon.source: "qrc:/icons/showgrid.svg"
-            checkable: true
-            checked: true
+		ToolSeparator {
+			visible: root.freedrawToggle || root.eraserToggle
+		}
 
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Show grid"
-        }
+		ComboBox {
+			id: brushSizeList
 
-        ToolSeparator {}
+			property int brushSize: 1
+			property int brushDensity: 1
 
-        ToolButton {
-            id: useFractionsToggle
-            checkable: true
-            icon.source: "qrc:/icons/division.svg"
+			visible: root.freedrawToggle || root.eraserToggle
+			model: ["Single", "Small", "Medium", "Large"]
+			onCurrentIndexChanged: {
+				const idx = brushSizeList.currentIndex;
+				//? QMLLS for some reason crashes if I put a switch statement here
 
-            ToolTip.delay: 1000
-            ToolTip.visible: hovered
-            ToolTip.text: "Show fractions"
-        }
+				if (idx === 0) {
+					brushSizeList.brushSize = 1;
+					brushSizeList.brushDensity = 1;
+				}
 
-        ToolSeparator {
-            visible: root.freedrawToggle || root.eraserToggle
-        }
+				if (idx === 1) {
+					brushSizeList.brushSize = 10;
+					brushSizeList.brushDensity = 5;
+				}
 
-        ComboBox {
-            id: brushSizeList
+				if (idx === 2) {
+					brushSizeList.brushSize = 30;
+					brushSizeList.brushDensity = 15;
+				}
 
-            property int brushSize: 1
-            property int brushDensity: 1
+				if (idx === 3) {
+					brushSizeList.brushSize = 50;
+					brushSizeList.brushDensity = 25;
+				}
+			}
+		}
 
-            visible: root.freedrawToggle || root.eraserToggle
-            model: ["Single", "Small", "Medium", "Large"]
-            onCurrentIndexChanged: {
-                const idx = brushSizeList.currentIndex;
-                //? QMLLS for some reason crashes if I put a switch statement here
+		ToolButton {
+			visible: root.freedrawToggle
+			onClicked: {
+				selectedColorDialog.open();
+			}
 
-                if (idx === 0) {
-                    brushSizeList.brushSize = 1;
-                    brushSizeList.brushDensity = 1;
-                }
+			Rectangle {
+				anchors.fill: parent
+				color: selectedColorDialog.selectedColor
+				anchors.margins: 5
+			}
+		}
 
-                if (idx === 1) {
-                    brushSizeList.brushSize = 10;
-                    brushSizeList.brushDensity = 5;
-                }
+		Item {
+			Layout.fillWidth: true
+		}
 
-                if (idx === 2) {
-                    brushSizeList.brushSize = 30;
-                    brushSizeList.brushDensity = 15;
-                }
+		Image {
+			id: logo
+			source: "qrc:/icons/logo.svg"
 
-                if (idx === 3) {
-                    brushSizeList.brushSize = 50;
-                    brushSizeList.brushDensity = 25;
-                }
-            }
-        }
+			MouseArea {
+				id: logoMouseArea
+				enabled: true
+				hoverEnabled: true
+				anchors.fill: parent
 
-        ToolButton {
-            visible: root.freedrawToggle
-            onClicked: {
-                selectedColorDialog.open();
-            }
+				onClicked: root.logoClicked()
+			}
 
-            Rectangle {
-                anchors.fill: parent
-                color: selectedColorDialog.selectedColor
-                anchors.margins: 5
-            }
-        }
+			ToolTip.delay: 1000
+			ToolTip.visible: logoMouseArea.containsMouse
+			ToolTip.text: "About Graphical"
 
-        Item {
-            Layout.fillWidth: true
-        }
-
-        Image {
-            id: logo
-            source: "qrc:/icons/logo.svg"
-
-            MouseArea {
-                id: logoMouseArea
-                enabled: true
-                hoverEnabled: true
-                anchors.fill: parent
-
-                onClicked: root.logoClicked()
-            }
-
-            ToolTip.delay: 1000
-            ToolTip.visible: logoMouseArea.containsMouse
-            ToolTip.text: "About Graphical"
-        }
-    }
+			layer.enabled: true
+			layer.effect: MultiEffect {
+				brightness: Application.styleHints.colorScheme === Qt.ColorScheme.Dark ? 1 : 0
+			}
+		}
+	}
 }

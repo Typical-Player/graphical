@@ -44,6 +44,7 @@ ApplicationWindow {
 
 	header: ToolBar {
 		height: 40
+
 		TopToolbar {
 			id: topBar
 			anchors.fill: parent

@@ -24,7 +24,7 @@ Dialog {
 
 			GradientStop {
 				position: 1
-				color: Qt.darker(colorPallete.window, 1.2)
+				color: Qt.darker(colorPallete.window, Application.styleHints.colorScheme === Qt.ColorScheme.Dark ? 2 : 1.2)
 			}
 		}
 

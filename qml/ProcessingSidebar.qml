@@ -21,6 +21,10 @@ Item {
 		source: "qrc:/icons/RobotoSerif-VariableFont_GRAD,opsz,wdth,wght.ttf"
 	}
 
+	ColorGroup {
+		id: colorPallete
+	}
+
 	ColumnLayout {
 		id: main
 		anchors.fill: parent
@@ -34,6 +38,7 @@ Item {
 			font.pointSize: 14
 			wrapMode: Text.WordWrap
 			Layout.fillWidth: true
+			color: "black"
 		}
 
 		RowLayout {
@@ -41,6 +46,7 @@ Item {
 				text: "A = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -57,6 +63,7 @@ Item {
 				text: "B = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -73,6 +80,7 @@ Item {
 				text: "Aᵀ = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -89,6 +97,7 @@ Item {
 				text: "AᵀA = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -105,6 +114,7 @@ Item {
 				text: "(AᵀA)⁻¹ = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -121,6 +131,7 @@ Item {
 				text: "AᵀB = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {
@@ -145,6 +156,7 @@ Item {
 				text: "(AᵀA)⁻¹AᵀB = "
 				font.family: robotoSerif.name
 				Layout.alignment: Qt.AlignVCenter
+				color: "black"
 			}
 
 			Matrix {

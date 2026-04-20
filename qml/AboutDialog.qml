@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Controls.Fusion
 
@@ -30,6 +31,11 @@ Item {
 			mipmap: true
 			sourceSize.width: 150
 			sourceSize.height: 80
+
+			layer.enabled: true
+			layer.effect: MultiEffect {
+				brightness: Application.styleHints.colorScheme === Qt.ColorScheme.Dark ? 1 : 0
+			}
 		}
 
 		Item {
@@ -48,7 +54,7 @@ Item {
 		}
 
 		Label {
-			text: "Graphical (0.7.0b)"
+			text: "Graphical (0.7.5b)"
 			font.family: "Helvetica"
 			font.bold: true
 		}

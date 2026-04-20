@@ -70,8 +70,10 @@ Item {
 
 	readonly property var columnWidths: {
 		let widths = []
-		for (let i = 0; i < shownColIndices.length; i++)
-			widths.push(root.columnWidth(shownColIndices[i]))
+		for (let i = 0; i < shownColIndices.length; i++) {
+			const idx = root.shownColIndices[i]
+			widths.push(idx === root.cellSentinel ? root.dotColW : root.columnWidth(idx))
+		}
 		return widths
 	}
 
@@ -201,7 +203,11 @@ Item {
                         if (cellItemDelegate.isEllipsisCol)
                             return "…";
 
-                        return root.matrixData[cellRepeater.rowIdx][cellItemDelegate.colIdx];
+	                    const row = root.matrixData[cellRepeater.rowIdx]
+	                    if (row === undefined) return ""
+	                    const val = row[cellItemDelegate.colIdx]
+	                    if (val === undefined) return ""
+	                    return val
                     }
                 }
             }
