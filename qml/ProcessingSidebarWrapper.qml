@@ -19,8 +19,6 @@ Item {
 	clip: true
 
 	Rectangle {
-		x: root.x
-		y: root.y
 		height: root.height
 		width: root.width
 		color: "white"
@@ -28,7 +26,10 @@ Item {
 		Flickable {
 			anchors.fill: parent
 			contentWidth: root.width
-			contentHeight: processingLoader.height
+            contentHeight:
+                processingLoader.item
+                    ? processingLoader.item.implicitHeight
+                    : 0
 			clip: true
 
 			ScrollBar.vertical: ScrollBar {
@@ -46,7 +47,10 @@ Item {
 			Loader {
 				id: processingLoader
 				width: root.width
-				height: item ? item.implicitHeight : 0
+                height:
+                    item
+                        ? Math.max(item.implicitHeight, root.height)
+                        : 0
 				asynchronous: true
 				active: root.isActive
 				sourceComponent: processingSidebarComponent
