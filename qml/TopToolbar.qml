@@ -7,286 +7,214 @@ import QtGraphs
 import graphical
 
 Rectangle {
-	id: root
+    id: root
 
-	required property PointProcessing backend
-	required property ValueAxis xAxis
-	required property ValueAxis yAxis
+    required property PointProcessing backend
+    required property ValueAxis xAxis
+    required property ValueAxis yAxis
 
-	readonly property color selectedColor: selectedColorDialog.selectedColor
+    readonly property color selectedColor: selectedColorDialog.selectedColor
 
-	readonly property bool panToggle: pantoggle.checked
-	readonly property bool freedrawToggle: freedrawtoggle.checked
-	readonly property bool eraserToggle: erasertoggle.checked
+    readonly property bool showBestFit: showBestFitToggle.checked
+    readonly property bool showGuide: showGuideToggle.checked
+    readonly property bool showGrid: showGridToggle.checked
+    readonly property bool useFractions: useFractionsToggle.checked
 
-	readonly property bool showBestFit: showBestFitToggle.checked
-	readonly property bool showGuide: showGuideToggle.checked
-	readonly property bool showGrid: showGridToggle.checked
-	readonly property bool useFractions: useFractionsToggle.checked
+    readonly property int brushSize: brushSizeList.brushSize
+    readonly property int brushDensity: brushSizeList.brushDensity
 
-	readonly property int brushSize: brushSizeList.brushSize
-	readonly property int brushDensity: brushSizeList.brushDensity
+    readonly property bool leftSidebarActive: leftSidebarToggle.checked
+    readonly property bool rightSidebarActive: rightSidebarToggle.checked
 
-	readonly property bool leftSidebarActive: leftSidebarToggle.checked
+    property int spacing: 4
 
-	property int spacing: 4
+    ColorGroup {
+        id: colorPallete
+    }
 
-	ColorGroup {
-		id: colorPallete
-	}
+    ColorDialog {
+        id: selectedColorDialog
+        selectedColor: "blue"
+    }
 
-	ColorDialog {
-		id: selectedColorDialog
-		selectedColor: "blue"
-	}
+    color: "transparent"
 
-	color: "transparent"
+        signal logoClicked
+        signal recenterClicked
 
-		signal
-	logoClicked
+    RowLayout {
+        anchors.fill: parent
+        spacing: root.spacing
 
-		signal
-	recenterClicked
+        ToolButton {
+            id: leftSidebarToggle
+            checkable: true
+            icon.source: "qrc:/icons/opensidebar.svg"
+            icon.color: colorPallete.text
+        }
 
-	RowLayout {
-		anchors.fill: parent
-		spacing: root.spacing
+        ToolSeparator {}
 
-		ToolButton {
-			id: leftSidebarToggle
-			checkable: true
+        ComboBox {
+            model: ["Lineal", "Cuadratic", "Exponential"]
+            onCurrentIndexChanged: root.backend.plotType = currentIndex
+        }
 
-			icon.source: "qrc:/icons/opensidebar.svg"
-			icon.color: colorPallete.text
-		}
+        ToolSeparator {}
 
-		ToolSeparator {
-		}
+        ToolButton {
+            onClicked: {
+                root.backend.clear();
+                root.xAxis.min = 0;
+                root.xAxis.max = 100;
+                root.yAxis.min = 0;
+                root.yAxis.max = 100;
+            }
+            icon.source: "qrc:/icons/clear.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Clear"
+        }
 
-		ComboBox {
-			model: ["Lineal", "Cuadratic", "Exponential"]
-			onCurrentIndexChanged: root.backend.plotType = currentIndex
-		}
+        ToolButton {
+            enabled: root.backend.pointSeries.count > 0
+            onClicked: root.recenterClicked()
+            icon.source: "qrc:/icons/recenter.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Re-center"
+        }
 
-		ToolSeparator {
-		}
+        ToolSeparator {}
 
-		ToolButton {
-			onClicked: {
-				root.backend.clear();
-				root.xAxis.min = 0;
-				root.xAxis.max = 100;
-				root.yAxis.min = 0;
-				root.yAxis.max = 100;
-			}
+        ToolButton {
+            id: showBestFitToggle
+            checkable: true
+            checked: true
+            icon.source: "qrc:/icons/bestfit.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Show best fit"
+        }
 
-			icon.source: "qrc:/icons/clear.svg"
+        ToolButton {
+            id: showGuideToggle
+            checkable: true
+            icon.source: "qrc:/icons/showguides.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Show guides"
+        }
 
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Clear"
-			icon.color: colorPallete.text
-		}
+        ToolButton {
+            id: showGridToggle
+            checkable: true
+            checked: true
+            icon.source: "qrc:/icons/showgrid.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Show grid"
+        }
 
-		ToolButton {
-			enabled: root.backend.pointSeries.count > 0
-			onClicked: root.recenterClicked()
+        ToolSeparator {}
 
-			icon.source: "qrc:/icons/recenter.svg"
-			icon.color: colorPallete.text
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Re-center"
-		}
+        ToolButton {
+            id: useFractionsToggle
+            checkable: true
+            icon.source: "qrc:/icons/division.svg"
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Show fractions"
+        }
 
-		ToolSeparator {
-		}
+        ToolSeparator {}
 
-		ButtonGroup {
-			buttons: toggleModes.children
-			exclusive: true
-		}
+        // Brush controls are always visible since draw/erase are always active
+        ComboBox {
+            id: brushSizeList
 
-		Row {
-			id: toggleModes
-			spacing: 4
+            property int brushSize: 1
+            property int brushDensity: 1
 
-			ToolButton {
-				id: pantoggle
-				checkable: true
-				checked: true
-				icon.source: "qrc:/icons/drag.svg"
-				icon.color: colorPallete.text
-				ToolTip.delay: 1000
-				ToolTip.visible: hovered
-				ToolTip.text: "Drag mode"
-			}
+            model: ["Single", "Small", "Medium", "Large"]
+            onCurrentIndexChanged: {
+                const idx = currentIndex;
 
-			ToolButton {
-				id: freedrawtoggle
-				checkable: true
-				icon.source: "qrc:/icons/freedraw.svg"
-				icon.color: colorPallete.text
-				ToolTip.delay: 1000
-				ToolTip.visible: hovered
-				ToolTip.text: "Freedraw mode"
-			}
+                if (idx === 0) { brushSize = 1;  brushDensity = 1;  }
+                if (idx === 1) { brushSize = 10; brushDensity = 5;  }
+                if (idx === 2) { brushSize = 30; brushDensity = 15; }
+                if (idx === 3) { brushSize = 50; brushDensity = 25; }
+            }
+        }
 
-			ToolButton {
-				id: erasertoggle
-				checkable: true
-				icon.source: "qrc:/icons/eraser.svg"
-				icon.color: colorPallete.text
-				ToolTip.delay: 1000
-				ToolTip.visible: hovered
-				ToolTip.text: "Eraser mode"
-			}
-		}
+        ToolButton {
+            onClicked: selectedColorDialog.open()
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Draw color"
 
-		ToolSeparator {
-		}
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 5
+                color: selectedColorDialog.selectedColor
+            }
+        }
 
-		ToolButton {
-			id: showBestFitToggle
-			checkable: true
-			checked: true
+        Item { Layout.fillWidth: true }
 
-			icon.source: "qrc:/icons/bestfit.svg"
-			icon.color: colorPallete.text
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Show best fit"
-		}
+        Label {
+            visible: performanceOptions.currentIndex === 0
+            text: "Automatic: " + (root.backend.resolvedPerformance === 1 ? "High performance" : "Low performance")
+            color: colorPallete.text
+            font.pointSize: 8
+            font.family: "Helvetica"
+        }
 
-		ToolButton {
-			id: showGuideToggle
-			checkable: true
+        ComboBox {
+            id: performanceOptions
+            model: ["Automatic", "High performance", "Low performance", "No optimizations"]
+            onCurrentIndexChanged: root.backend.performanceMode = currentIndex
+        }
 
-			icon.source: "qrc:/icons/showguides.svg"
-			icon.color: colorPallete.text
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Show guides"
-		}
+        ToolSeparator {}
 
-		ToolButton {
-			id: showGridToggle
-			icon.source: "qrc:/icons/showgrid.svg"
-			icon.color: colorPallete.text
-			checkable: true
-			checked: true
+        ToolButton {
+            id: rightSidebarToggle
+            checkable: true
+            icon.source: "qrc:/icons/opensidebar.svg"
+            transform: Scale { xScale: -1; origin.x: rightSidebarToggle.width / 2 }
+            icon.color: colorPallete.text
+            ToolTip.delay: 1000
+            ToolTip.visible: hovered
+            ToolTip.text: "Point editor"
+        }
 
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Show grid"
-		}
+        Image {
+            id: logo
+            source: "qrc:/icons/logo.svg"
 
-		ToolSeparator {
-		}
+            MouseArea {
+                id: logoMouseArea
+                enabled: true
+                hoverEnabled: true
+                anchors.fill: parent
+                onClicked: root.logoClicked()
+            }
 
-		ToolButton {
-			id: useFractionsToggle
-			checkable: true
-			icon.source: "qrc:/icons/division.svg"
-			icon.color: colorPallete.text
-			ToolTip.delay: 1000
-			ToolTip.visible: hovered
-			ToolTip.text: "Show fractions"
-		}
+            ToolTip.delay: 1000
+            ToolTip.visible: logoMouseArea.containsMouse
+            ToolTip.text: "About Graphical"
 
-		ToolSeparator {
-			visible: root.freedrawToggle || root.eraserToggle
-		}
-
-		ComboBox {
-			id: brushSizeList
-
-			property int brushSize: 1
-			property int brushDensity: 1
-
-			visible: root.freedrawToggle || root.eraserToggle
-			model: ["Single", "Small", "Medium", "Large"]
-			onCurrentIndexChanged: {
-				const idx = brushSizeList.currentIndex;
-				//? QMLLS for some reason crashes if I put a switch statement here
-
-				if (idx === 0) {
-					brushSizeList.brushSize = 1;
-					brushSizeList.brushDensity = 1;
-				}
-
-				if (idx === 1) {
-					brushSizeList.brushSize = 10;
-					brushSizeList.brushDensity = 5;
-				}
-
-				if (idx === 2) {
-					brushSizeList.brushSize = 30;
-					brushSizeList.brushDensity = 15;
-				}
-
-				if (idx === 3) {
-					brushSizeList.brushSize = 50;
-					brushSizeList.brushDensity = 25;
-				}
-			}
-		}
-
-		ToolButton {
-			visible: root.freedrawToggle
-			onClicked: {
-				selectedColorDialog.open();
-			}
-
-			Rectangle {
-				anchors.fill: parent
-				color: selectedColorDialog.selectedColor
-				anchors.margins: 5
-			}
-		}
-
-		Item {
-			Layout.fillWidth: true
-		}
-
-		Label {
-			visible: performanceOptions.currentIndex === 0
-			text: "Automatic: " + (root.backend.resolvedPerformance === 1 ? "High performance" : "Low performance")
-			color: colorPallete.text
-			font.pointSize: 8
-			font.family: "Helvetica"
-		}
-
-		ComboBox {
-			id: performanceOptions
-			model: ["Automatic", "High performance", "Low performance", "No optimizations"]
-			onCurrentIndexChanged: root.backend.performanceMode = currentIndex
-		}
-
-		ToolSeparator {
-		}
-
-		Image {
-			id: logo
-			source: "qrc:/icons/logo.svg"
-
-			MouseArea {
-				id: logoMouseArea
-				enabled: true
-				hoverEnabled: true
-				anchors.fill: parent
-
-				onClicked: root.logoClicked()
-			}
-
-			ToolTip.delay: 1000
-			ToolTip.visible: logoMouseArea.containsMouse
-			ToolTip.text: "About Graphical"
-
-			layer.enabled: true
-			layer.effect: MultiEffect {
-				brightness: Application.styleHints.colorScheme === Qt.ColorScheme.Dark ? 1 : 0
-			}
-		}
-	}
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                brightness: Application.styleHints.colorScheme === Qt.ColorScheme.Dark ? 1 : 0
+            }
+        }
+    }
 }

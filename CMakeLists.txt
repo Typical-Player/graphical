@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(graphical VERSION 0.1 LANGUAGES CXX)
+project(graphical VERSION 0.9 LANGUAGES CXX)
+
+set(APP_NAME "${PROJECT_NAME}")
+set(APP_VERSION "${PROJECT_VERSION}")
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/AppConfig.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/AppConfig.h
+        @ONLY
+)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -23,6 +32,8 @@ qt_add_executable(appgraphical
         result.h
         matrix.h
         third_party/lttb.hpp
+        pointsmodel.cpp
+        pointsmodel.h
 )
 
 qt_add_qml_module(appgraphical
@@ -42,6 +53,8 @@ qt_add_qml_module(appgraphical
         qml/ProcessingSidebar.qml
         qml/Matrix.qml
         qml/Spinner.qml
+        qml/RightSidebar.qml
+        qml/PointInputDelegate.qml
         SOURCES
         pointprocessing.cpp
         pointprocessing.h
@@ -58,6 +71,10 @@ set_target_properties(appgraphical PROPERTIES
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
         MACOSX_BUNDLE TRUE
         WIN32_EXECUTABLE TRUE
+)
+
+target_include_directories(appgraphical PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_link_libraries(appgraphical

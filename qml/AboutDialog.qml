@@ -54,7 +54,7 @@ Item {
 		}
 
 		Label {
-			text: "Graphical (0.8b)"
+			text: `${Qt.application.name} (${Qt.application.version})`
 			font.family: "Helvetica"
 			font.bold: true
 		}

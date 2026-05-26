@@ -6,60 +6,43 @@ Item {
     id: root
     readonly property MouseArea ma: graphMouseArea
 
-    required property bool freedrawMode
-    required property bool eraserMode
-    required property bool panMode
-
     required property int bDensity
     required property int bSize
 
     required property GraphUtils gu
-
     required property ValueAxis xAxis
     required property ValueAxis yAxis
-
     required property GraphsView gv
 
     MouseArea {
         id: graphMouseArea
         anchors.fill: parent
         enabled: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
 
         property real lastX: 0
         property real lastY: 0
 
         hoverEnabled: true
 
-        onClicked: {
-            if (root.freedrawMode)
-                root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
-            if (root.eraserMode)
+        onClicked: function(mouse) {
+            // Right-click releases are handled via onPositionChanged / pan logic; nothing to do on click
+            if (mouse.button === Qt.RightButton)
+                return;
+
+            if (mouse.modifiers & Qt.ControlModifier)
                 root.gu.erasePoints(mouseX, mouseY, root.bSize);
+            else
+                root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
         }
 
-        onPositionChanged: {
+        onPositionChanged: function(mouse) {
             if (!pressed)
                 return;
 
-            if (root.freedrawMode) {
-                const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
-
-                if (dist >= Math.max(1, root.bSize / 4)) {
-                    root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
-                    lastX = mouseX;
-                    lastY = mouseY;
-                }
-                return;
-            }
-
-            if (root.eraserMode) {
-                root.gu.erasePoints(mouseX, mouseY, root.bSize);
-                return;
-            }
-
-            if (root.panMode) {
+            // Right-click drag → pan
+            if (pressedButtons & Qt.RightButton) {
                 const area = root.gv.plotArea;
-
                 const scaleX = (root.xAxis.max - root.xAxis.min) / area.width;
                 const scaleY = (root.yAxis.max - root.yAxis.min) / area.height;
                 const dx = (mouseX - lastX) * scaleX;
@@ -71,6 +54,23 @@ Item {
                 root.yAxis.max += dy;
                 lastX = mouseX;
                 lastY = mouseY;
+                return;
+            }
+
+            // Left-click drag → draw or erase
+            if (pressedButtons & Qt.LeftButton) {
+                if (mouse.modifiers & Qt.ControlModifier) {
+                    root.gu.erasePoints(mouseX, mouseY, root.bSize);
+                    // No lastX/Y update needed — eraser radius is position-based, not stroke-based
+                    return;
+                }
+
+                const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
+                if (dist >= Math.max(1, root.bSize / 4)) {
+                    root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
+                    lastX = mouseX;
+                    lastY = mouseY;
+                }
             }
         }
 
@@ -79,7 +79,7 @@ Item {
             lastY = mouseY;
         }
 
-        onWheel: function (wheel) {
+        onWheel: function(wheel) {
             const area = root.gv.plotArea;
             const factor = wheel.angleDelta.y > 0 ? 0.85 : 1.15;
 

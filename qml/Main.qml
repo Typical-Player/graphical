@@ -4,161 +4,177 @@ import QtQuick.Layouts
 import graphical
 
 ApplicationWindow {
-	id: root
-	width: 1300
-	height: 512
-	visible: true
-	title: "Graphical"
+    id: root
+    width: 1300
+    height: 512
+    visible: true
+    title: "Graphical"
 
-	minimumWidth: 1300
-	minimumHeight: 512
+    minimumWidth: 1300
+    minimumHeight: 512
 
-	GraphicalDialog {
-		id: aboutDialog
-		width: 500
-		height: 380
+    GraphicalDialog {
+        id: aboutDialog
+        width: 500
+        height: 380
 
-		Loader {
-			active: aboutDialog.enabled
-			asynchronous: true
-			anchors.fill: parent
-			AboutDialog {
-				anchors.fill: parent
-				anchors.margins: 10
+        Loader {
+            active: aboutDialog.enabled
+            asynchronous: true
+            anchors.fill: parent
+            AboutDialog {
+                anchors.fill: parent
+                anchors.margins: 10
+                onClosedClicked: aboutDialog.close()
+            }
+        }
+    }
 
-				onClosedClicked: aboutDialog.close()
-			}
-		}
-	}
+    PointProcessing {
+        id: processing
+        useFractions: topBar.useFractions
+    }
 
-	PointProcessing {
-		id: processing
-		useFractions: topBar.useFractions
-	}
+    ColorGroup {
+        id: colorPallete
+    }
 
-	ColorGroup {
-		id: colorPallete
-	}
+    color: colorPallete.window
 
-	color: colorPallete.window
+    header: ToolBar {
+        height: 40
 
-	header: ToolBar {
-		height: 40
+        TopToolbar {
+            id: topBar
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            anchors.topMargin: 2
+            anchors.bottomMargin: 2
+            spacing: 8
 
-		TopToolbar {
-			id: topBar
-			anchors.fill: parent
-			anchors.leftMargin: 10
-			anchors.rightMargin: 10
-			anchors.topMargin: 2
-			anchors.bottomMargin: 2
-			spacing: 8
+            backend: processing
+            xAxis: graph.xAxis
+            yAxis: graph.yAxis
 
-			backend: processing
-			xAxis: graph.xAxis
-			yAxis: graph.yAxis
+            onLogoClicked: aboutDialog.open()
+            onRecenterClicked: graph.recenter()
+        }
+    }
 
-			onLogoClicked: {
-				aboutDialog.open();
-			}
+    SplitView {
+        anchors.fill: parent
+        orientation: Qt.Horizontal
 
-			onRecenterClicked: {
-				graph.recenter();
-			}
-		}
-	}
+        Rectangle {
+            id: sidebarSplitviewWrap
+            color: "transparent"
+            visible: topBar.leftSidebarActive || width > 0
+            SplitView.preferredWidth: width
+            width: topBar.leftSidebarActive ? 450 : 0
 
-	SplitView {
-		anchors.fill: parent
-		orientation: Qt.Horizontal
+            states: [
+                State {
+                    name: "open"
+                    when: topBar.leftSidebarActive
+                    PropertyChanges { target: sidebarSplitviewWrap; width: 450 }
+                },
+                State {
+                    name: "closed"
+                    when: !topBar.leftSidebarActive
+                    PropertyChanges { target: sidebarSplitviewWrap; width: 0 }
+                }
+            ]
 
-		Rectangle {
-			id: sidebarSplitviewWrap
-			color: "transparent"
-			visible: topBar.leftSidebarActive || width > 0
-			SplitView.preferredWidth: width
-			width: topBar.leftSidebarActive ? 450 : 0
+            transitions: [
+                Transition {
+                    from: "open"; to: "closed"
+                    SequentialAnimation {
+                        NumberAnimation { properties: "width"; duration: 500; easing.type: Easing.OutExpo }
+                        ScriptAction { script: sidebarSplitviewWrap.visible = false }
+                    }
+                },
+                Transition {
+                    from: "closed"; to: "open"
+                    SequentialAnimation {
+                        ScriptAction { script: sidebarSplitviewWrap.visible = true }
+                        NumberAnimation { properties: "width"; duration: 500; easing.type: Easing.OutExpo }
+                    }
+                }
+            ]
 
-			states: [
-				State {
-					name: "open"
-					when: topBar.leftSidebarActive
-					PropertyChanges {
-						target: sidebarSplitviewWrap; width: 450
-					}
-				},
-				State {
-					name: "closed"
-					when: !topBar.leftSidebarActive
-					PropertyChanges {
-						target: sidebarSplitviewWrap; width: 0
-					}
-				}
-			]
+            ProcessingSidebarWrapper {
+                anchors.fill: parent
+                isActive: topBar.leftSidebarActive
+                backend: processing
+            }
+        }
 
-			transitions: [
-				Transition {
-					from: "open"
-					to: "closed"
-					SequentialAnimation {
-						NumberAnimation {
-							properties: "width"
-							duration: 500
-							easing.type: Easing.OutExpo
-						}
-						ScriptAction {
-							script: sidebarSplitviewWrap.visible = false
-						}
-					}
-				},
-				Transition {
-					from: "closed"
-					to: "open"
-					SequentialAnimation {
-						ScriptAction {
-							script: sidebarSplitviewWrap.visible = true
-						}
-						NumberAnimation {
-							properties: "width"
-							duration: 500
-							easing.type: Easing.OutExpo
-						}
-					}
-				}
-			]
+        ColumnLayout {
+            SplitView.fillWidth: true
+            spacing: 0
 
-			ProcessingSidebarWrapper {
-				anchors.fill: parent
-				isActive: topBar.leftSidebarActive
-				backend: processing
-			}
-		}
+            Graph {
+                id: graph
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                backend: processing
+                showGrid: topBar.showGrid
+                showGuides: topBar.showGuide
+                showBestFit: topBar.showBestFit
+                selectedColor: topBar.selectedColor
+                brushSize: topBar.brushSize
+                brushDensity: topBar.brushDensity
+            }
 
-		ColumnLayout {
-			SplitView.fillWidth: true
-			spacing: 0
+            ResultBar {
+                Layout.fillWidth: true
+                implicitHeight: 50
+                backend: processing
+            }
+        }
 
-			Graph {
-				id: graph
-				Layout.fillHeight: true
-				Layout.fillWidth: true
-				backend: processing
-				panMode: topBar.panToggle
-				freedrawMode: topBar.freedrawToggle
-				eraserMode: topBar.eraserToggle
-				showGrid: topBar.showGrid
-				showGuides: topBar.showGuide
-				showBestFit: topBar.showBestFit
-				selectedColor: topBar.selectedColor
-				brushSize: topBar.brushSize
-				brushDensity: topBar.brushDensity
-			}
+        Rectangle {
+            id: rightSidebarWrap
+            color: "transparent"
+            visible: topBar.rightSidebarActive || width > 0
+            SplitView.preferredWidth: width
+            width: topBar.rightSidebarActive ? 300 : 0
 
-			ResultBar {
-				Layout.fillWidth: true
-				implicitHeight: 50
-				backend: processing
-			}
-		}
-	}
+            states: [
+                State {
+                    name: "open"
+                    when: topBar.rightSidebarActive
+                    PropertyChanges { target: rightSidebarWrap; width: 300 }
+                },
+                State {
+                    name: "closed"
+                    when: !topBar.rightSidebarActive
+                    PropertyChanges { target: rightSidebarWrap; width: 0 }
+                }
+            ]
+
+            transitions: [
+                Transition {
+                    from: "open"; to: "closed"
+                    SequentialAnimation {
+                        NumberAnimation { properties: "width"; duration: 500; easing.type: Easing.OutExpo }
+                        ScriptAction { script: rightSidebarWrap.visible = false }
+                    }
+                },
+                Transition {
+                    from: "closed"; to: "open"
+                    SequentialAnimation {
+                        ScriptAction { script: rightSidebarWrap.visible = true }
+                        NumberAnimation { properties: "width"; duration: 500; easing.type: Easing.OutExpo }
+                    }
+                }
+            ]
+
+            RightSidebar {
+                anchors.fill: parent
+                backend: processing
+            }
+        }
+    }
 }

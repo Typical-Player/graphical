@@ -187,6 +187,12 @@ void pointprocessing::setAllPoints(const QList<QPointF>& points) {
 	emit dataChanged();
 }
 
+void pointprocessing::setPoint(qint64 idx, const QPointF &point) {
+	if (idx < 0 || idx >= static_cast<qint64>(_allPoints.size())) return;
+	_allPoints[static_cast<int>(idx)] = point;
+	emit dataChanged();
+}
+
 void pointprocessing::onWorkerFinished(const Result& result) {
 	_resultEquation = result.eqRes;
 

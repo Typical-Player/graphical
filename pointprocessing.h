@@ -103,6 +103,8 @@ public:
 	Q_INVOKABLE const QList<QPointF>& allPoints() const;
 	void setAllPoints(const QList<QPointF>& points);
 
+	Q_INVOKABLE void setPoint(qint64 idx, const QPointF& point);
+
 private slots:
 	void onWorkerFinished(const Result& result);
 	void onWorkerError(const QString& err);
