@@ -116,6 +116,27 @@ void graphutils::recenter() const {
 	yAxis()->setMax(maxY + padY);
 }
 
+int graphutils::nearestPointIndex(const qreal mouseX, const qreal mouseY, const qreal thresholdPx) const {
+	if (!checkValid()) return -1;
+	const auto& pts = _backend->allPoints();
+	if (pts.isEmpty()) return -1;
+
+	const qreal xScale = _plotArea.width()  / (_xAxis->max() - _xAxis->min());
+	const qreal yScale = _plotArea.height() / (_yAxis->max() - _yAxis->min());
+	const qreal threshold2 = thresholdPx * thresholdPx;
+
+	int   bestIdx   = -1;
+	qreal bestDist2 = threshold2;
+
+	for (int i = 0; i < pts.size(); ++i) {
+		const qreal sx = _plotArea.x() + (pts[i].x() - _xAxis->min()) * xScale;
+		const qreal sy = _plotArea.y() + (_yAxis->max() - pts[i].y()) * yScale;
+		const qreal d2 = (sx - mouseX) * (sx - mouseX) + (sy - mouseY) * (sy - mouseY);
+		if (d2 < bestDist2) { bestDist2 = d2; bestIdx = i; }
+	}
+	return bestIdx;
+}
+
 bool graphutils::checkValid() const {
 	return _backend && _xAxis && _yAxis;
 }

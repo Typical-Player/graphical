@@ -34,6 +34,8 @@ public:
 
 	Q_INVOKABLE void recenter() const;
 
+	Q_INVOKABLE [[nodiscard]] int nearestPointIndex(qreal mouseX, qreal mouseY, qreal thresholdPx) const;
+
 signals:
 	void backendChanged();
 	void xAxisChanged();

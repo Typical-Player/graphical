@@ -18,6 +18,7 @@ class pointprocessing : public QObject {
 
 	Q_PROPERTY(QScatterSeries* pointSeries READ pointSeries CONSTANT)
 	Q_PROPERTY(QLineSeries* fitSeries READ fitSeries CONSTANT)
+	Q_PROPERTY(QLineSeries* residualSeries READ residualSeries CONSTANT)
 	Q_PROPERTY(SidebarResult resultMatrices READ resultMatrices NOTIFY resultMatricesChanged FINAL)
 	Q_PROPERTY(QString error READ error NOTIFY errorChanged FINAL)
 	Q_PROPERTY(Progress progress READ progress NOTIFY progressChanged FINAL)
@@ -31,6 +32,7 @@ class pointprocessing : public QObject {
 	Q_PROPERTY(qint64 fitSamples READ fitSamples WRITE setFitSamples NOTIFY fitSamplesChanged FINAL)
 	Q_PROPERTY(bool useFractions READ useFractions WRITE setUseFractions NOTIFY useFractionsChanged FINAL)
 	Q_PROPERTY(QRectF plotArea READ plotArea WRITE setPlotArea NOTIFY plotAreaChanged FINAL)
+	Q_PROPERTY(int pointCount READ pointCount NOTIFY dataChanged FINAL)
 
 public:
 	explicit pointprocessing(QObject* parent = nullptr);
@@ -75,6 +77,8 @@ public:
 
 	[[nodiscard]] QLineSeries* fitSeries() const;
 
+	[[nodiscard]] QLineSeries* residualSeries() const;
+
 	[[nodiscard]] PlotType plotType() const;
 	void setPlotType(PlotType plotType);
 
@@ -100,10 +104,14 @@ public:
 
 	Q_INVOKABLE void clear();
 
-	Q_INVOKABLE const QList<QPointF>& allPoints() const;
+	Q_INVOKABLE [[nodiscard]] const QList<QPointF>& allPoints() const;
 	void setAllPoints(const QList<QPointF>& points);
 
 	Q_INVOKABLE void setPoint(qint64 idx, const QPointF& point);
+
+	Q_INVOKABLE [[nodiscard]] double  residualAt(qint64 idx) const;
+	Q_INVOKABLE [[nodiscard]] QPointF pointAt(qint64 idx) const;
+	[[nodiscard]] int pointCount() const;
 
 private slots:
 	void onWorkerFinished(const Result& result);
@@ -131,6 +139,7 @@ signals:
 private:
 	void fireWorker();
 	void setProgress(Progress progress);
+	void resampleResidualSeries(const QList<QPointF>& visiblePoints);
 	void resampleFitSeries(double xMin, double xMax) const;
 	[[nodiscard]] static QList<QPointF> decimate(const QList<QPointF>& points, double xMin, double xMax, int maxPoints);
 	void resampleDisplaySeries(double xMin, double xMax);
@@ -146,6 +155,7 @@ private:
 	QScatterSeries* _series{};
 	QRectF _plotArea{};
 	QLineSeries* _fitSeries{};
+	QLineSeries* _residualSeries{};
 	PlotType _plotType{};
 	Progress _progress{};
 	PerformanceMode _performanceMode{};

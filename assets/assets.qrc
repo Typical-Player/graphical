@@ -11,6 +11,7 @@
         <file>showguides.svg</file>
         <file>eraser.svg</file>
         <file>opensidebar.svg</file>
+        <file>selection.svg</file>
         <file>RobotoSerif-VariableFont_GRAD,opsz,wdth,wght.ttf</file>
     </qresource>
 </RCC>

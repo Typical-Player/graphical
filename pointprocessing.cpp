@@ -14,6 +14,14 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
 	_series = new QScatterSeries(this);
 	_fitSeries = new QLineSeries(this);
 
+	_residualSeries = new QLineSeries(this);
+
+	QColor residualColor;
+	residualColor.setRgb(255, 0, 0);
+	residualColor.setAlpha(120);
+
+	_residualSeries->setColor(residualColor);
+
 	_fitSeries->setStrokeStyle(QLineSeries::StrokeStyle::DashLine);
 	QColor color;
 	color.setRgb(0, 0, 0);
@@ -76,6 +84,10 @@ QScatterSeries* pointprocessing::pointSeries() const {
 
 QLineSeries* pointprocessing::fitSeries() const {
 	return _fitSeries;
+}
+
+QLineSeries * pointprocessing::residualSeries() const {
+	return _residualSeries;
 }
 
 pointprocessing::PlotType pointprocessing::plotType() const {
@@ -209,11 +221,14 @@ void pointprocessing::onWorkerFinished(const Result& result) {
 	_bC = result.betaC;
 	_sdRes = result.sr;
 
+	setProgress(READY);
+
 	resampleFitSeries(_lastXMin, _lastXMax);
+	resampleResidualSeries(_series->points());
+
 	emit errorChanged();
 	emit resultEquationChanged();
 	emit resultMatricesChanged();
-	setProgress(READY);
 }
 
 void pointprocessing::onWorkerError(const QString& err) {
@@ -259,6 +274,47 @@ void pointprocessing::setProgress(const Progress progress) {
 
 	_progress = progress;
 	emit progressChanged();
+}
+
+void pointprocessing::resampleResidualSeries(const QList<QPointF> &visiblePoints) {
+	if (_progress != READY) {
+		_residualSeries->clear();
+		return;
+	}
+
+	QList<QPointF> lines;
+	lines.reserve(visiblePoints.size() * 3);
+
+	for (const auto& p : visiblePoints) {
+		const double x = p.x();
+		const double y = p.y();
+
+		double yHat = 0.0;
+
+		switch (_plotType) {
+			case LINEAL:
+				yHat = _bA + _bB * x;
+				break;
+
+			case CUADRATIC:
+				yHat = _bA + _bB * x + _bC * x * x;
+				break;
+
+			case EXPONENTIAL:
+				yHat = _bA * std::exp(_bB * x);
+				break;
+		}
+
+		if (!std::isfinite(yHat))
+			continue;
+
+		lines.append(QPointF(x, y));
+		lines.append(QPointF(x, yHat));
+
+		lines.append(QPointF(qQNaN(), qQNaN()));
+	}
+
+	_residualSeries->replace(lines);
 }
 
 void pointprocessing::resampleFitSeries(const double xMin, const double xMax) const {
@@ -328,6 +384,7 @@ void pointprocessing::resampleDisplaySeries(const double xMin, const double xMax
 
 	if (_performanceMode == ORIGINAL) {
 		_series->replace(_allPoints);
+		resampleResidualSeries(_allPoints);
 		this->_frameTimer.restart();
 		return;
 	}
@@ -348,10 +405,14 @@ void pointprocessing::resampleDisplaySeries(const double xMin, const double xMax
 		cellPx
 	);
 
-	if (reduced.size() <= lttbThreshold)
+	if (reduced.size() <= lttbThreshold) {
 		_series->replace(reduced);
-	else
+		resampleResidualSeries(reduced);
+	}
+	else {
 		_series->replace(decimate(reduced, xMin, xMax, lttbCap));
+		resampleResidualSeries(decimate(reduced, xMin, xMax, lttbCap));
+	}
 
 	_frameTimer.restart();
 }
@@ -414,6 +475,29 @@ void pointprocessing::evaluateAutoPerformance() {
 		resampleDisplaySeries(_lastXMin, _lastXMax);
 		emit resolvedPerformanceChanged();
 	}
+}
+
+double pointprocessing::residualAt(qint64 idx) const {
+	if (idx < 0 || idx >= static_cast<qint64>(_allPoints.size()) || _progress != READY)
+		return std::numeric_limits<double>::quiet_NaN();
+	const double x = _allPoints[static_cast<int>(idx)].x();
+	const double y = _allPoints[static_cast<int>(idx)].y();
+	double yHat = 0.0;
+	switch (_plotType) {
+		case LINEAL:      yHat = _bA + _bB * x;                break;
+		case CUADRATIC:   yHat = _bA + _bB * x + _bC * x * x; break;
+		case EXPONENTIAL: yHat = _bA * std::exp(_bB * x);      break;
+	}
+	return y - yHat;
+}
+
+QPointF pointprocessing::pointAt(qint64 idx) const {
+	if (idx < 0 || idx >= static_cast<qint64>(_allPoints.size())) return {};
+	return _allPoints[static_cast<int>(idx)];
+}
+
+int pointprocessing::pointCount() const {
+	return static_cast<int>(_allPoints.size());
 }
 
 #include "moc_pointprocessing.cpp"
