@@ -60,6 +60,7 @@ qt_add_qml_module(appgraphical
         pointprocessing.h
         graphutils.cpp
         graphutils.h
+        SOURCES plottypes.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

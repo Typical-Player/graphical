@@ -8,7 +8,7 @@ void workerprocessing::requestCancellation() {
 	_canceled.storeRelease(1);
 }
 
-void workerprocessing::run(const QList<QPointF>& points, const pointprocessing::PlotType plotType,
+void workerprocessing::run(const QList<QPointF>& points, const PlotTypes::PlotType plotType,
                            const bool useFractions) {
 	_canceled.storeRelease(0);
 
@@ -21,12 +21,14 @@ void workerprocessing::run(const QList<QPointF>& points, const pointprocessing::
 	bool ok = true;
 
 	switch (plotType) {
-	case pointprocessing::LINEAL: fitLinear(points, result, ok, useFractions);
+    case PlotTypes::LINEAL: fitLinear(points, result, ok, useFractions);
 		break;
-	case pointprocessing::CUADRATIC: fitQuadratic(points, result, ok, useFractions);
+    case PlotTypes::CUADRATIC: fitQuadratic(points, result, ok, useFractions);
 		break;
-	case pointprocessing::EXPONENTIAL: fitExponential(points, result, ok, useFractions);
+    case PlotTypes::EXPONENTIAL: fitExponential(points, result, ok, useFractions);
 		break;
+    case PlotTypes::AUTOMATIC_FIT: fitAutomatic(points, result, ok, useFractions);
+        break;
 	}
 
 	if (isCanceled()) {
@@ -68,7 +70,7 @@ void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, b
 	const auto beta = solve(X, y);
 
 	fillMatrices(result, X, y, beta, useFractions);
-	compute(points, result, beta, pointprocessing::LINEAL, useFractions);
+    compute(points, result, beta, PlotTypes::LINEAL, useFractions);
 }
 
 void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
@@ -95,7 +97,7 @@ void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result
 	const auto beta = solve(X, y);
 
 	fillMatrices(result, X, y, beta, useFractions);
-	compute(points, result, beta, pointprocessing::CUADRATIC, useFractions);
+    compute(points, result, beta, PlotTypes::CUADRATIC, useFractions);
 }
 
 void workerprocessing::fitExponential(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
@@ -129,7 +131,81 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 	const QList recovered = {std::exp(beta[0]), beta[1]};
 
 	fillMatrices(result, X, y, recovered, useFractions);
-	compute(points, result, recovered, pointprocessing::EXPONENTIAL, useFractions);
+    compute(points, result, recovered, PlotTypes::EXPONENTIAL, useFractions);
+}
+
+void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result, bool &ok, bool useFractions)
+{
+    struct Candidate {
+        Result result;
+        double sse = std::numeric_limits<double>::infinity();
+        PlotTypes::PlotType type;
+        bool valid = false;
+    };
+
+    auto tryFit = [&](auto fitFn, PlotTypes::PlotType type) -> Candidate {
+        Result r{};
+        bool fitOk = true;
+        (this->*fitFn)(points, r, fitOk, useFractions);
+        if (!fitOk || isCanceled()) return {};
+
+        double sse = 0;
+        for (const QPointF& p : points) {
+            double yHat = 0;
+            const double x = p.x();
+            switch (type) {
+            case PlotTypes::LINEAL:      yHat = r.betaA + r.betaB * x; break;
+            case PlotTypes::CUADRATIC:   yHat = r.betaA + r.betaB * x + r.betaC * x * x; break;
+            case PlotTypes::EXPONENTIAL: yHat = r.betaA * std::exp(r.betaB * x); break;
+            default: break;
+            }
+            if (!std::isfinite(yHat)) { sse = std::numeric_limits<double>::infinity(); break; }
+            const double diff = p.y() - yHat;
+            sse += diff * diff;
+        }
+
+        // scale penalty
+        // penalty is calculated based on parameter count
+        const int paramCount = (type == PlotTypes::CUADRATIC) ? 3 : 2;
+        const int n = points.size();
+        const double adjustedSse = sse * (1.0 + static_cast<double>(paramCount) / n);
+
+        return { r, adjustedSse, type, true };
+    };
+
+    std::array candidates = {
+        tryFit(&workerprocessing::fitLinear,      PlotTypes::LINEAL),
+        tryFit(&workerprocessing::fitQuadratic,   PlotTypes::CUADRATIC),
+        tryFit(&workerprocessing::fitExponential, PlotTypes::EXPONENTIAL),
+    };
+
+    if (isCanceled()) { emit canceled(); return; }
+
+    const auto* best = std::min_element(candidates.begin(), candidates.end(),
+                                        [](const Candidate& a, const Candidate& b) {
+                                            if (!a.valid) return false;
+                                            if (!b.valid) return true;
+                                            return a.sse < b.sse;
+                                        });
+
+    if (!best || !best->valid) {
+        emit error("Automatic fit: no valid model found");
+        ok = false;
+        return;
+    }
+
+    const QString modelName = [&] {
+        switch (best->type) {
+        case PlotTypes::LINEAL:      return QStringLiteral("Linear");
+        case PlotTypes::CUADRATIC:   return QStringLiteral("Quadratic");
+        case PlotTypes::EXPONENTIAL: return QStringLiteral("Exponential");
+        default:                           return QStringLiteral("Unknown");
+        }
+    }();
+
+    result = best->result;
+    result.eqRes = QStringLiteral("[Auto->%1] ").arg(modelName) + result.eqRes;
+    result.selectedPlotType = best->type;
 }
 
 //? https://stackoverflow.com/questions/26643695/converting-a-floating-point-decimal-value-to-a-fraction
@@ -157,7 +233,7 @@ long workerprocessing::gcd(const long a, const long b) {
 }
 
 void workerprocessing::compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
-                               const pointprocessing::PlotType plotType, const bool useFractions) {
+                               const PlotTypes::PlotType plotType, const bool useFractions) {
 	const auto n = points.size();
 	double sumY = 0;
 
@@ -178,9 +254,11 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 		case 1: yHat = beta[0] + beta[1] * x + beta[2] * x * x;
 			break;
 		case 2: yHat = beta[0] * std::exp(beta[1] * x);
-			break;
-		}
-		sse += (p.y() - yHat) * (p.y() - yHat);
+            break;
+        case PlotTypes::AUTOMATIC_FIT:
+            break;
+        }
+        sse += (p.y() - yHat) * (p.y() - yHat);
 		sst += (p.y() - meanY) * (p.y() - meanY);
 	}
 
@@ -212,8 +290,10 @@ void workerprocessing::compute(const QList<QPointF>& points, Result& result, con
 		               .arg(r2, 0, 'f', 4);
 		result.betaA = beta[0];
 		result.betaB = beta[1];
-		break;
-	}
+        break;
+    case PlotTypes::AUTOMATIC_FIT:
+        break;
+    }
 }
 
 QList<double> workerprocessing::solve(const g_matrix<double>& X, const QList<double>& Y) {

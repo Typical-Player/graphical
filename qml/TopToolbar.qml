@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import QtQuick.Effects
 import QtGraphs
 import graphical
 
@@ -13,55 +12,42 @@ Rectangle {
     required property ValueAxis xAxis
     required property ValueAxis yAxis
 
-    readonly property bool mobile:
-        Window.width <= 700
+    readonly property bool mobile: Window.width <= 700
 
-    readonly property color selectedColor:
-        selectedColorDialog.selectedColor
+    readonly property color selectedColor: selectedColorDialog.selectedColor
 
-    readonly property bool showBestFit:
-        showBestFitToggle.checked
+    readonly property bool showBestFit: showBestFitToggle.checked
 
-    readonly property bool showGuide:
-        showGuideToggle.checked
+    readonly property bool showGuide: showGuideToggle.checked
 
-    readonly property bool showGrid:
-        showGridToggle.checked
+    readonly property bool showGrid: showGridToggle.checked
 
-    readonly property bool useFractions:
-        useFractionsToggle.checked
+    readonly property bool useFractions: useFractionsToggle.checked
 
-    readonly property bool selectionToggle:
-        selectionModeBtn.checked
+    readonly property bool selectionToggle: selectionModeBtn.checked
 
-    property bool leftSidebarActive:
-        leftSidebarToggle.checked
+    property bool leftSidebarActive: leftSidebarToggle.checked
 
-    property bool rightSidebarActive:
-        rightSidebarToggle.checked
+    property bool rightSidebarActive: rightSidebarToggle.checked
 
-    readonly property int brushSize:
-        brushSizeList.brushSize
+    readonly property int brushSize: brushSizeList.brushSize
 
-    readonly property int brushDensity:
-        brushSizeList.brushDensity
+    readonly property int brushDensity: brushSizeList.brushDensity
 
     function closeLeftSidebar() {
-        leftSidebarToggle.checked = false
+        leftSidebarToggle.checked = false;
     }
 
     function closeRightSidebar() {
-        rightSidebarToggle.checked = false
+        rightSidebarToggle.checked = false;
     }
 
     function toggleLeftSidebar() {
-        leftSidebarToggle.checked =
-            !leftSidebarToggle.checked
+        leftSidebarToggle.checked = !leftSidebarToggle.checked;
     }
 
     function toggleRightSidebar() {
-        rightSidebarToggle.checked =
-            !rightSidebarToggle.checked
+        rightSidebarToggle.checked = !rightSidebarToggle.checked;
     }
 
     ColorGroup {
@@ -75,10 +61,8 @@ Rectangle {
 
     color: "transparent"
 
-        signal
-    logoClicked
-        signal
-    recenterClicked
+    signal logoClicked
+    signal recenterClicked
 
     Flickable {
         anchors.fill: parent
@@ -101,10 +85,7 @@ Rectangle {
 
             anchors.verticalCenter: parent.verticalCenter
 
-            width: Math.max(
-                parent.width,
-                implicitWidth
-            )
+            width: Math.max(parent.width, implicitWidth)
 
             ToolButton {
                 id: leftSidebarToggle
@@ -115,49 +96,52 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {
-            }
+            ToolSeparator {}
 
             ComboBox {
-                implicitWidth: mobile ? 110 : 150
+                implicitWidth: root.mobile ? 110 : 150
 
-                model: [
-                    "Lineal",
-                    "Cuadratic",
-                    "Exponential"
-                ]
+                model: ["Lineal", "Cuadratic", "Exponential", "Automatic"]
 
-                onCurrentIndexChanged:
-                    root.backend.plotType = currentIndex
+                onCurrentIndexChanged: root.backend.plotType = currentIndex
             }
 
-            ToolSeparator {
+            Label {
+                visible: root.backend.plotType === 3 && root.backend.progress === PointProcessing.READY
+                text: {
+                    const eq = root.backend.resultEquation;
+                    const m = eq.match(/\[Auto->(\w+)\]/);
+                    return m ? "-> " + m[1] : "";
+                }
+                font.bold: true
+                color: colorPallete.text
+                leftPadding: 4
             }
+
+            ToolSeparator {}
 
             ToolButton {
                 icon.source: "qrc:/icons/clear.svg"
                 icon.color: colorPallete.text
 
                 onClicked: {
-                    root.backend.clear()
+                    root.backend.clear();
 
-                    root.xAxis.min = 0
-                    root.xAxis.max = 100
+                    root.xAxis.min = 0;
+                    root.xAxis.max = 100;
 
-                    root.yAxis.min = 0
-                    root.yAxis.max = 100
+                    root.yAxis.min = 0;
+                    root.yAxis.max = 100;
                 }
             }
 
             ToolButton {
-                enabled:
-                    root.backend.pointSeries.count > 0
+                enabled: root.backend.pointSeries.count > 0
 
                 icon.source: "qrc:/icons/recenter.svg"
                 icon.color: colorPallete.text
 
-                onClicked:
-                    root.recenterClicked()
+                onClicked: root.recenterClicked()
             }
 
             ToolButton {
@@ -169,8 +153,7 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {
-            }
+            ToolSeparator {}
 
             ToolButton {
                 id: showBestFitToggle
@@ -201,8 +184,7 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {
-            }
+            ToolSeparator {}
 
             ToolButton {
                 id: useFractionsToggle
@@ -213,47 +195,34 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {
-            }
+            ToolSeparator {}
 
             ComboBox {
                 id: brushSizeList
 
-                implicitWidth: mobile ? 100 : 150
+                implicitWidth: root.mobile ? 100 : 150
 
                 property int brushSize: 1
                 property int brushDensity: 1
 
-                model: [
-                    "Single",
-                    "Small",
-                    "Medium",
-                    "Large"
-                ]
+                model: ["Single", "Small", "Medium", "Large"]
 
                 onCurrentIndexChanged: {
-                    const t = [
-                        [1, 1],
-                        [10, 5],
-                        [30, 15],
-                        [50, 25]
-                    ][currentIndex]
+                    const t = [[1, 1], [10, 5], [30, 15], [50, 25]][currentIndex];
 
-                    brushSize = t[0]
-                    brushDensity = t[1]
+                    brushSize = t[0];
+                    brushDensity = t[1];
                 }
             }
 
             ToolButton {
-                onClicked:
-                    selectedColorDialog.open()
+                onClicked: selectedColorDialog.open()
 
                 Rectangle {
                     anchors.fill: parent
                     anchors.margins: 5
 
-                    color:
-                        selectedColorDialog.selectedColor
+                    color: selectedColorDialog.selectedColor
                 }
             }
 
@@ -264,22 +233,14 @@ Rectangle {
             ComboBox {
                 id: performanceOptions
 
-                implicitWidth: mobile ? 130 : 180
+                implicitWidth: root.mobile ? 130 : 180
 
-                model: [
-                    "Automatic",
-                    "High performance",
-                    "Low performance",
-                    "No optimizations"
-                ]
+                model: ["Automatic", "High performance", "Low performance", "No optimizations"]
 
-                onCurrentIndexChanged:
-                    root.backend.performanceMode =
-                        currentIndex
+                onCurrentIndexChanged: root.backend.performanceMode = currentIndex
             }
 
-            ToolSeparator {
-            }
+            ToolSeparator {}
 
             ToolButton {
                 id: rightSidebarToggle
@@ -291,8 +252,7 @@ Rectangle {
 
                 transform: Scale {
                     xScale: -1
-                    origin.x:
-                        rightSidebarToggle.width / 2
+                    origin.x: rightSidebarToggle.width / 2
                 }
             }
 
@@ -301,16 +261,15 @@ Rectangle {
 
                 source: "qrc:/icons/logo.svg"
 
-                width: mobile ? 28 : 36
-                height: mobile ? 28 : 36
+                Layout.minimumWidth: root.mobile ? 28 : 36
+                Layout.minimumHeight: root.mobile ? 28 : 36
 
                 fillMode: Image.PreserveAspectFit
 
                 MouseArea {
                     anchors.fill: parent
 
-                    onClicked:
-                        root.logoClicked()
+                    onClicked: root.logoClicked()
                 }
             }
         }

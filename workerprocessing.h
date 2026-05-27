@@ -3,7 +3,7 @@
 
 #include "matrix.h"
 #include "result.h"
-#include "pointprocessing.h"
+#include "plottypes.h"
 #include <QMutex>
 
 class workerprocessing : public QObject {
@@ -15,7 +15,7 @@ public:
 	void requestCancellation();
 
 public slots:
-	void run(const QList<QPointF>& points, pointprocessing::PlotType plotType, bool useFractions);
+    void run(const QList<QPointF>& points, PlotTypes::PlotType plotType, bool useFractions);
 
 signals:
 	void finished(const Result& result);
@@ -28,11 +28,12 @@ private:
 	void fitLinear(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
 	void fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
 	void fitExponential(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
+    void fitAutomatic(const QList<QPointF>& points, Result& result, bool& ok, bool useFractions);
 
 	[[nodiscard]] static long gcd(long a, long b);
 
 	static void compute(const QList<QPointF>& points, Result& result, const QList<double>& beta,
-	                    pointprocessing::PlotType plotType, bool useFractions);
+                        PlotTypes::PlotType plotType, bool useFractions);
 	[[nodiscard]] static QList<double> solve(const g_matrix<double>& X, const QList<double>& Y);
 	[[nodiscard]] static QString calculateEuclideanFraction(double input);
 

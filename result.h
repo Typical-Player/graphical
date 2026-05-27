@@ -4,6 +4,7 @@
 #include <QObject>
 #include <qqmlintegration.h>
 #include <QList>
+#include "plottypes.h"
 
 struct SidebarResult {
 	Q_GADGET
@@ -59,6 +60,7 @@ public:
 	double betaB{};
 	double betaC{};
 	SidebarResult sr{};
+    PlotTypes::PlotType selectedPlotType = PlotTypes::LINEAL;
 };
 
 #endif //GRAPHICAL_RESULT_H
