@@ -14,6 +14,14 @@ Rectangle {
 
     readonly property bool mobile: Window.width <= 700
 
+    readonly property int touchMode: {
+        return touchModeGroup.checkedButton?.touchModeValue ?? 0
+    }
+
+    ButtonGroup {
+        id: touchModeGroup
+    }
+
     readonly property color selectedColor: selectedColorDialog.selectedColor
 
     readonly property bool showBestFit: showBestFitToggle.checked
@@ -61,8 +69,10 @@ Rectangle {
 
     color: "transparent"
 
-    signal logoClicked
-    signal recenterClicked
+        signal
+    logoClicked
+        signal
+    recenterClicked
 
     Flickable {
         anchors.fill: parent
@@ -96,7 +106,8 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+            }
 
             ComboBox {
                 implicitWidth: root.mobile ? 110 : 150
@@ -118,7 +129,8 @@ Rectangle {
                 leftPadding: 4
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+            }
 
             ToolButton {
                 icon.source: "qrc:/icons/clear.svg"
@@ -153,7 +165,8 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+            }
 
             ToolButton {
                 id: showBestFitToggle
@@ -184,7 +197,40 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+                visible: root.mobile
+            }
+
+            ToolButton {
+                visible: root.mobile
+                checkable: true
+                checked: true
+                ButtonGroup.group: touchModeGroup
+                icon.source: "qrc:/icons/freedraw.svg"
+                icon.color: colorPallete.text
+                property int touchModeValue: 0
+            }
+
+            ToolButton {
+                visible: root.mobile
+                checkable: true
+                ButtonGroup.group: touchModeGroup
+                icon.source: "qrc:/icons/eraser.svg"
+                icon.color: colorPallete.text
+                property int touchModeValue: 1
+            }
+
+            ToolButton {
+                visible: root.mobile
+                checkable: true
+                ButtonGroup.group: touchModeGroup
+                icon.source: "qrc:/icons/drag.svg"
+                icon.color: colorPallete.text
+                property int touchModeValue: 2
+            }
+
+            ToolSeparator {
+            }
 
             ToolButton {
                 id: useFractionsToggle
@@ -195,7 +241,8 @@ Rectangle {
                 icon.color: colorPallete.text
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+            }
 
             ComboBox {
                 id: brushSizeList
@@ -240,7 +287,8 @@ Rectangle {
                 onCurrentIndexChanged: root.backend.performanceMode = currentIndex
             }
 
-            ToolSeparator {}
+            ToolSeparator {
+            }
 
             ToolButton {
                 id: rightSidebarToggle

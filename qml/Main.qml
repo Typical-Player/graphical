@@ -166,6 +166,7 @@ ApplicationWindow {
 
                         brushSize: topBar.brushSize
                         brushDensity: topBar.brushDensity
+                        touchMode: topBar.touchMode
                     }
 
                     ResultBar {
@@ -225,6 +226,7 @@ ApplicationWindow {
 
                     brushSize: topBar.brushSize
                     brushDensity: topBar.brushDensity
+                    touchMode: topBar.touchMode
                 }
 
                 ResultBar {
