@@ -181,14 +181,14 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
 
     if (isCanceled()) { emit canceled(); return; }
 
-    const auto* best = std::min_element(candidates.begin(), candidates.end(),
+    const auto best = std::min_element(candidates.begin(), candidates.end(),
                                         [](const Candidate& a, const Candidate& b) {
                                             if (!a.valid) return false;
                                             if (!b.valid) return true;
                                             return a.sse < b.sse;
                                         });
 
-    if (!best || !best->valid) {
+    if (best == candidates.end() || !best->valid) {
         emit error("Automatic fit: no valid model found");
         ok = false;
         return;
