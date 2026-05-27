@@ -12,7 +12,7 @@ Rectangle {
     required property ValueAxis xAxis
     required property ValueAxis yAxis
 
-    readonly property bool mobile: Window.width <= 700
+    readonly property bool mobile: Window.width <= 700 || Qt.platform.os === "android"
 
     readonly property int touchMode: {
         return touchModeGroup.checkedButton?.touchModeValue ?? 0
