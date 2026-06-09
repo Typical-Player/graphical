@@ -511,6 +511,25 @@ QPointF pointprocessing::pointAt(qint64 idx) const {
     return _allPoints[static_cast<int>(idx)];
 }
 
+double pointprocessing::evaluateFitAt(double x) const {
+    if (_progress != READY) return qQNaN();
+
+    switch (_resolvedFitType) {
+        case PlotTypes::LINEAL:
+            return _bA + _bB * x;
+        case PlotTypes::CUADRATIC:
+            return _bA + _bB * x + _bC * x * x;
+        case PlotTypes::EXPONENTIAL: {
+            const double expo = _bB * x;
+            if (expo > 700.0 || expo < -700.0) return qQNaN();
+            return _bA * std::exp(expo);
+        }
+        case PlotTypes::AUTOMATIC_FIT:
+            return qQNaN();
+    }
+    return qQNaN();
+}
+
 int pointprocessing::pointCount() const {
     return static_cast<int>(_allPoints.size());
 }

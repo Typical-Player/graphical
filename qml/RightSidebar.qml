@@ -8,6 +8,11 @@ Rectangle {
 
     required property PointsModel pointsModel
 
+    required property PointProcessing backend
+
+    property real probeX: NaN
+    property real probeY: NaN
+
     color: "transparent"
 
     ColorGroup { id: colorPallete }
@@ -15,6 +20,51 @@ Rectangle {
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: probeCol.implicitHeight + 16
+            color: colorPallete.button
+            visible: root.backend.progress === PointProcessing.READY
+
+            ColumnLayout {
+                id: probeCol
+                anchors {
+                    left: parent.left; right: parent.right
+                    top: parent.top; margins: 8
+                }
+                spacing: 4
+
+                Label {
+                    text: "Evaluate fit"
+                    font.bold: true
+                    font.pointSize: 8
+                    color: colorPallete.text
+                }
+
+                RowLayout {
+                    spacing: 4
+
+                    Label { text: "X ="; font.pointSize: 8; color: colorPallete.text }
+
+                    TextField {
+                        id: probeXField
+                        placeholderText: "x value"
+                        Layout.fillWidth: true
+                        implicitHeight: 26
+                        font.pointSize: 9
+                        horizontalAlignment: Text.AlignRight
+                        validator: DoubleValidator { notation: DoubleValidator.ScientificNotation }
+                        onTextChanged: root.probeX = acceptableInput ? parseFloat(text) : NaN
+
+                        Binding on text {
+                            when: isNaN(root.probeX) && probeXField.text.length > 0
+                            value: ""
+                        }
+                    }
+                }
+            }
+        }
 
         Rectangle {
             Layout.fillWidth: true; implicitHeight: 36

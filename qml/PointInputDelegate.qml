@@ -18,7 +18,11 @@ Rectangle {
         return (r >= 0 ? "+" : "") + r.toFixed(4)
     }
 
-    width: listView.width; implicitHeight: 34
+    ColorGroup {
+        id: colorPallete
+    }
+
+    width: ListView.view.width; implicitHeight: 34
     color: row.index % 2 === 0 ? colorPallete.base : colorPallete.alternateBase
 
     RowLayout {
@@ -61,8 +65,8 @@ Rectangle {
             horizontalAlignment: Text.AlignRight
             color: {
                 if (isNaN(row.residual)) return colorPallete.mid
-                if (row.residual >  0.001) return "#c0522a"
-                if (row.residual < -0.001) return "#2a7ac0"
+                if (row.residual >  0.001) return colorPallete.text
+                if (row.residual < -0.001) return colorPallete.text
                 return "#2a9d2a"
             }
         }

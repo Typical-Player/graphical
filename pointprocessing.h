@@ -104,6 +104,9 @@ public:
 
     Q_INVOKABLE [[nodiscard]] double  residualAt(qint64 idx) const;
     Q_INVOKABLE [[nodiscard]] QPointF pointAt(qint64 idx) const;
+
+    Q_INVOKABLE double evaluateFitAt(double x) const;
+
     [[nodiscard]] int pointCount() const;
 
 private slots:

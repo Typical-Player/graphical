@@ -29,6 +29,27 @@ Rectangle {
     property rect _selDataRect
     property bool _hasSelection: false
 
+    required property real probeX
+    required property real probeY
+
+    readonly property bool _probeVisible: {
+        if (isNaN(root.probeX) || isNaN(root.probeY)) return false;
+        const a = view.plotArea;
+        if (a.width <= 0) return false;
+        const sx = a.x + (root.probeX - xA.min) / (xA.max - xA.min) * a.width;
+        return sx >= a.x && sx <= a.x + a.width;
+    }
+
+    readonly property real _probeSX: {
+        const a = view.plotArea;
+        return a.x + (root.probeX - xA.min) / (xA.max - xA.min) * a.width;
+    }
+
+    readonly property real _probeSY: {
+        const a = view.plotArea;
+        return a.y + (yA.max - root.probeY) / (yA.max - yA.min) * a.height;
+    }
+
     readonly property rect _confirmedScreenRect: {
         const a = view.plotArea;
         if (!_hasSelection || a.width <= 0 || a.height <= 0)
@@ -109,6 +130,79 @@ Rectangle {
         function onSelectionCleared() {
             root._hasSelection = false;
             root.selectionCleared();
+        }
+    }
+
+    Rectangle {
+        visible: root._probeVisible
+        x: root._probeSX
+        y: view.plotArea.y
+        width: 1
+        height: view.plotArea.height
+        color: "transparent"
+
+        // Simulated dash via repeating segments
+        Repeater {
+            model: Math.ceil(view.plotArea.height / 10)
+            Rectangle {
+                required property int index
+                y: index * 10
+                width: 1.5
+                height: 5
+                color: Qt.rgba(0.15, 0.45, 0.90, 0.75)
+            }
+        }
+    }
+
+    // Intersection dot
+    Rectangle {
+        visible: root._probeVisible
+        x: root._probeSX - 5
+        y: root._probeSY - 5
+        width: 10; height: 10
+        radius: 5
+        color: Qt.rgba(0.15, 0.45, 0.90, 0.9)
+        border.color: "white"
+        border.width: 1.5
+        z: 10
+    }
+
+    // Label beside the dot — flips to left side when near right edge
+    Rectangle {
+        id: probeLabel
+        visible: root._probeVisible
+
+        readonly property bool flipLeft: root._probeSX > view.plotArea.x + view.plotArea.width * 0.75
+
+        x: flipLeft ? root._probeSX - width - 10 : root._probeSX + 12
+        y: Math.max(view.plotArea.y + 4,
+            Math.min(root._probeSY - height / 2,
+                view.plotArea.y + view.plotArea.height - height - 4))
+
+        width: probeLabelCol.implicitWidth + 16
+        height: probeLabelCol.implicitHeight + 10
+        radius: 4
+        color: colorPallete.base
+        border.color: Qt.rgba(0.15, 0.45, 0.90, 0.6)
+        border.width: 1
+        z: 10
+
+        ColumnLayout {
+            id: probeLabelCol
+            anchors.centerIn: parent
+            spacing: 2
+            Label {
+                text: "x = " + root.probeX.toFixed(4)
+                font.pointSize: 7.5
+                font.family: "Courier New"
+                color: colorPallete.text
+            }
+            Label {
+                text: "y = " + root.probeY.toFixed(4)
+                font.pointSize: 7.5
+                font.family: "Courier New"
+                color: Qt.rgba(0.15, 0.45, 0.90, 1.0)
+            }
         }
     }
 

@@ -57,6 +57,9 @@ ApplicationWindow {
         backend: processing
     }
 
+    property real probeX: NaN
+    readonly property real probeY: isNaN(probeX) ? NaN : processing.evaluateFitAt(probeX)
+
     Connections {
         target: graph
 
@@ -167,6 +170,9 @@ ApplicationWindow {
                         brushSize: topBar.brushSize
                         brushDensity: topBar.brushDensity
                         touchMode: topBar.touchMode
+
+                        probeX: root.probeX
+                        probeY: root.probeY
                     }
 
                     ResultBar {
@@ -200,6 +206,11 @@ ApplicationWindow {
                     RightSidebar {
                         anchors.fill: parent
                         pointsModel: pointsModel
+                        backend: processing
+
+                        probeX: root.probeX
+                        probeY: root.probeY
+                        onProbeXChanged: root.probeX = probeX
                     }
                 }
             }
@@ -227,6 +238,9 @@ ApplicationWindow {
                     brushSize: topBar.brushSize
                     brushDensity: topBar.brushDensity
                     touchMode: topBar.touchMode
+
+                    probeX: root.probeX
+                    probeY: root.probeY
                 }
 
                 ResultBar {
@@ -371,6 +385,11 @@ ApplicationWindow {
                         Layout.fillHeight: true
 
                         pointsModel: pointsModel
+                        backend: processing
+
+                        probeX: root.probeX
+                        probeY: root.probeY
+                        onProbeXChanged: root.probeX = probeX
                     }
                 }
             }
