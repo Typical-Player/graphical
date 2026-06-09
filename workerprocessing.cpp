@@ -139,7 +139,7 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
     struct Candidate {
         Result result;
         double sse = std::numeric_limits<double>::infinity();
-        PlotTypes::PlotType type;
+        PlotTypes::PlotType type{};
         bool valid = false;
     };
 

@@ -184,13 +184,46 @@ Item {
 
             onWheel: function (wheel) {
                 const area = root.gv.plotArea;
-                const factor = wheel.angleDelta.y > 0 ? 0.85 : 1.15;
-                const mx = root.xAxis.min + ((wheel.x - area.x) / area.width) * (root.xAxis.max - root.xAxis.min);
-                const my = root.yAxis.max - ((wheel.y - area.y) / area.height) * (root.yAxis.max - root.yAxis.min);
-                root.xAxis.min = mx + (root.xAxis.min - mx) * factor;
-                root.xAxis.max = mx + (root.xAxis.max - mx) * factor;
-                root.yAxis.min = my + (root.yAxis.min - my) * factor;
-                root.yAxis.max = my + (root.yAxis.max - my) * factor;
+
+                const hasPixelDelta = (wheel.pixelDelta.x !== 0 || wheel.pixelDelta.y !== 0);
+                const isSmooth = (Math.abs(wheel.angleDelta.y) % 120 !== 0)
+                    || hasPixelDelta;
+                const isPinchZoom = (wheel.modifiers & Qt.ControlModifier);
+
+                if (isPinchZoom) {
+                    const factor = wheel.angleDelta.y > 0 ? 0.92 : 1.08; // gentler
+                    const mx = root.xAxis.min + ((wheel.x - area.x) / area.width)
+                        * (root.xAxis.max - root.xAxis.min);
+                    const my = root.yAxis.max - ((wheel.y - area.y) / area.height)
+                        * (root.yAxis.max - root.yAxis.min);
+                    root.xAxis.min = mx + (root.xAxis.min - mx) * factor;
+                    root.xAxis.max = mx + (root.xAxis.max - mx) * factor;
+                    root.yAxis.min = my + (root.yAxis.min - my) * factor;
+                    root.yAxis.max = my + (root.yAxis.max - my) * factor;
+
+                } else if (isSmooth) {
+                    const dx = hasPixelDelta ? wheel.pixelDelta.x : wheel.angleDelta.x * 0.5;
+                    const dy = hasPixelDelta ? wheel.pixelDelta.y : wheel.angleDelta.y * 0.5;
+                    const scaleX = (root.xAxis.max - root.xAxis.min) / area.width;
+                    const scaleY = (root.yAxis.max - root.yAxis.min) / area.height;
+                    root.xAxis.min -= dx * scaleX;
+                    root.xAxis.max -= dx * scaleX;
+                    root.yAxis.min += dy * scaleY;
+                    root.yAxis.max += dy * scaleY;
+
+                } else {
+                    const factor = wheel.angleDelta.y > 0 ? 0.85 : 1.15;
+                    const mx = root.xAxis.min + ((wheel.x - area.x) / area.width)
+                        * (root.xAxis.max - root.xAxis.min);
+                    const my = root.yAxis.max - ((wheel.y - area.y) / area.height)
+                        * (root.yAxis.max - root.yAxis.min);
+                    root.xAxis.min = mx + (root.xAxis.min - mx) * factor;
+                    root.xAxis.max = mx + (root.xAxis.max - mx) * factor;
+                    root.yAxis.min = my + (root.yAxis.min - my) * factor;
+                    root.yAxis.max = my + (root.yAxis.max - my) * factor;
+                }
+
+                wheel.accepted = true;
             }
         }
     }

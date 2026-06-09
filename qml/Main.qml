@@ -171,7 +171,7 @@ ApplicationWindow {
 
                     ResultBar {
                         Layout.fillWidth: true
-                        implicitHeight: 50
+                        implicitHeight: 100
 
                         backend: processing
                     }

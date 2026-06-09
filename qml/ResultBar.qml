@@ -129,6 +129,8 @@ Rectangle {
 				text: root.statusText()
 				color: root.backend.progress === PointProcessing.READY ? "#80ff80" : "white"
 				font.family: "Helvetica"
+                font.pointSize: 24
+                font.bold: true
 
 				Behavior on text {
 					SequentialAnimation {
