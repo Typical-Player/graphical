@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(graphical VERSION 0.9 LANGUAGES CXX)
+project(graphical VERSION 1.0 LANGUAGES CXX)
 
 set(APP_NAME "${PROJECT_NAME}")
 set(APP_VERSION "${PROJECT_VERSION}")
