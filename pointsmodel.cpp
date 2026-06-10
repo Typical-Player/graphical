@@ -150,6 +150,11 @@ void PointsModel::setPoint(qint64 visualRow, qreal x, qreal y) {
     _selfModifying = false;
 }
 
+QPointF PointsModel::pointAt(int visualRow) const {
+    if (visualRow < 0 || visualRow >= _filteredIndices.size()) return {};
+    return _points.at(_filteredIndices.at(visualRow));
+}
+
 void PointsModel::onBackendDataChanged() {
     if (_selfModifying) return;
     beginResetModel();

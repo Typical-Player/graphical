@@ -57,6 +57,8 @@ public:
 
     Q_INVOKABLE void setPoint(qint64 visualRow, qreal x, qreal y);
 
+    Q_INVOKABLE [[nodiscard]] QPointF pointAt(int visualRow) const;
+
 signals:
     void backendChanged();
 

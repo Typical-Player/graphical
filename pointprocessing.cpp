@@ -41,6 +41,17 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
     _resizeTimer->setInterval(500);
     _resizeTimer->setSingleShot(true);
 
+    auto restartSelectionIfActive = [this] {
+        if (_selectionPoints.isEmpty()) return;
+        if (_selectionProgress == PROCESSING) {
+            _selectionPendingRestart = true;
+            _selectionWorker->requestCancellation();
+            return;
+        }
+        setSelectionProgress(PROCESSING);
+        _selectionDebounceTimer->start();
+    };
+
     connect(this, &pointprocessing::dataChanged, this, &pointprocessing::onDataChanged);
     connect(this, &pointprocessing::plotTypeChanged, this, &pointprocessing::onDataChanged);
     connect(this, &pointprocessing::useFractionsChanged, this, &pointprocessing::onDataChanged);
@@ -53,6 +64,34 @@ pointprocessing::pointprocessing(QObject* parent) : QObject(parent) {
     });
 
     _workerThread->start();
+
+    _selectionWorkerThread = new QThread(this);
+    _selectionWorker = new workerprocessing;
+    _selectionWorker->moveToThread(_selectionWorkerThread);
+
+    connect(this, &pointprocessing::requestSelectionRun,
+        _selectionWorker, &workerprocessing::run);
+    connect(_selectionWorker, &workerprocessing::finished,
+            this, &pointprocessing::onSelectionWorkerFinished);
+    connect(_selectionWorker, &workerprocessing::canceled,
+            this, &pointprocessing::onSelectionWorkerCanceled);
+
+    connect(_selectionWorker, &workerprocessing::error,
+            this, [this](const QString&) { clearSelection(); });
+    connect(this, &pointprocessing::plotTypeChanged, this, restartSelectionIfActive);
+    connect(this, &pointprocessing::useFractionsChanged, this, restartSelectionIfActive);
+
+    _selectionFitSeries = new QLineSeries(this);
+    _selectionFitSeries->setStrokeStyle(QLineSeries::StrokeStyle::DashLine);
+    _selectionFitSeries->setColor(QColor::fromRgbF(0.85, 0.45, 0.10));
+
+    _selectionDebounceTimer = new QTimer(this);
+    _selectionDebounceTimer->setInterval(1000);
+    _selectionDebounceTimer->setSingleShot(true);
+    connect(_selectionDebounceTimer, &QTimer::timeout,
+            this, &pointprocessing::fireSelectionWorker);
+
+    _selectionWorkerThread->start();
 }
 
 pointprocessing::~pointprocessing() {
@@ -60,6 +99,11 @@ pointprocessing::~pointprocessing() {
     _workerThread->quit();
     _workerThread->wait();
     delete _worker;
+
+    _selectionWorker->requestCancellation();
+    _selectionWorkerThread->quit();
+    _selectionWorkerThread->wait();
+    delete _selectionWorker;
 }
 
 QString pointprocessing::error() const {
@@ -68,6 +112,10 @@ QString pointprocessing::error() const {
 
 pointprocessing::Progress pointprocessing::progress() const {
     return _progress;
+}
+
+pointprocessing::Progress pointprocessing::selectionProgress() const {
+    return _selectionProgress;
 }
 
 QString pointprocessing::resultEquation() const {
@@ -181,6 +229,9 @@ void pointprocessing::updateFitRange(const double xMin, const double xMax, const
 
     if (_progress != READY) return;
     resampleFitSeries(xMin, xMax);
+
+    if (_hasSelectionResult)
+        resampleSelectionFitSeries(xMin, xMax);
 }
 
 void pointprocessing::clear() {
@@ -189,12 +240,19 @@ void pointprocessing::clear() {
     _series->clear();
 }
 
-const QList<QPointF>& pointprocessing::allPoints() const {
+QList<QPointF> pointprocessing::allPoints() const {
     return _allPoints;
 }
 
 void pointprocessing::setAllPoints(const QList<QPointF>& points) {
     _allPoints = points;
+    resampleDisplaySeries(_lastXMin, _lastXMax);
+    emit dataChanged();
+}
+
+void pointprocessing::keepOnlySelection() {
+    if (_selectionPoints.isEmpty()) return;
+    _allPoints = _selectionPoints;
     resampleDisplaySeries(_lastXMin, _lastXMax);
     emit dataChanged();
 }
@@ -532,6 +590,159 @@ double pointprocessing::evaluateFitAt(double x) const {
 
 int pointprocessing::pointCount() const {
     return static_cast<int>(_allPoints.size());
+}
+
+void pointprocessing::setSelectionPoints(const QList<QPointF>& points) {
+    _selectionPoints = points;
+    _hasSelectionResult = false;
+    _selectionFitSeries->clear();
+
+    if (points.size() < 2) {
+        emit selectionResultChanged();
+        return;
+    }
+
+    if (_selectionProgress == PROCESSING) {
+        _pendingRestart = true;
+        _selectionWorker->requestCancellation();
+        return;
+    }
+
+    setSelectionProgress(PROCESSING);
+    _selectionDebounceTimer->start();
+}
+
+void pointprocessing::clearSelection() {
+    _selectionPoints.clear();
+    _hasSelectionResult = false;
+    _selectionFitSeries->clear();
+    _selectionDebounceTimer->stop();
+    _selectionWorker->requestCancellation();
+    setSelectionProgress(NOTFIRED);
+    emit selectionResultChanged();
+}
+
+void pointprocessing::fireSelectionWorker() {
+    _selectionPendingRestart = false;
+    setSelectionProgress(PROCESSING);
+    emit requestSelectionRun(_selectionPoints, _plotType, _useFractions);
+}
+
+void pointprocessing::onSelectionWorkerFinished(const Result& result) {
+    if (_selectionPendingRestart) {
+        _selectionPendingRestart = false;
+        _selectionDebounceTimer->start();
+        return;
+    }
+
+    _selBA = result.betaA;
+    _selBB  = result.betaB;
+    _selBC  = result.betaC;
+    _selectionSdRes = result.sr;
+    _selectionResultEquation = result.eqRes;
+    _selectionResolvedFitType = (_plotType == PlotTypes::AUTOMATIC_FIT)
+                                    ? result.selectedPlotType
+                                    : _plotType;
+    _hasSelectionResult = true;
+    setSelectionProgress(READY);
+
+    resampleSelectionFitSeries(_lastXMin, _lastXMax);
+    emit selectionResultChanged();
+}
+
+void pointprocessing::onSelectionWorkerCanceled() {
+    if (_selectionPendingRestart || _selectionDebounceTimer->isActive()) {
+        _selectionPendingRestart = false;
+        _selectionDebounceTimer->start();
+    }
+    setSelectionProgress(CANCELED);
+}
+
+void pointprocessing::resampleSelectionFitSeries(double xMin, double xMax) const {
+    QList<QPointF> points;
+    points.reserve(_fitSamples + 1);
+
+    const double step = (xMax - xMin) / static_cast<double>(_fitSamples);
+
+    for (int i = 0; i <= _fitSamples; ++i) {
+        double x = xMin + i * step;
+        double y = 0;
+
+        switch (_selectionResolvedFitType) {
+            case PlotTypes::LINEAL:
+                y = _selBA + _selBB * x;
+                break;
+            case PlotTypes::CUADRATIC:
+                y = _selBA + _selBB * x + _selBC * x * x;
+                break;
+            case PlotTypes::EXPONENTIAL: {
+                const double expo = _selBB * x;
+                if (expo > 700.0 || expo < -700.0) continue;
+                y = _selBA * std::exp(expo);
+                break;
+            }
+            case PlotTypes::AUTOMATIC_FIT:
+                continue;
+        }
+
+        if (const double pad = (_YMax - _YMin) * .5; y < _YMin - pad || y > _YMax + pad) continue;
+
+        if (!std::isfinite(y)) continue;
+
+        points.append({x, y});
+    }
+
+    _selectionFitSeries->replace(points);
+}
+
+double pointprocessing::evaluateSelectionFitAt(double x) const {
+    if (!_hasSelectionResult || _progress != READY) return qQNaN();
+
+    switch (_selectionResolvedFitType) {
+        case PlotTypes::LINEAL:
+            return _selBA + _selBB * x;
+            break;
+        case PlotTypes::CUADRATIC:
+            return _selBA + _selBB * x + _selBC * x * x;
+            break;
+        case PlotTypes::EXPONENTIAL: {
+            const double expo = _selBB * x;
+            if (expo > 700.0 || expo < -700.0) return qQNaN();
+            return _selBA * std::exp(expo);
+            break;
+        }
+        case PlotTypes::AUTOMATIC_FIT:
+            return qQNaN();
+    }
+
+    return qQNaN();
+}
+
+bool pointprocessing::hasSelectionResult() const {
+    return _hasSelectionResult;
+}
+
+QString pointprocessing::selectionResultEquation() const {
+    return _selectionResultEquation;
+}
+
+SidebarResult pointprocessing::selectionResultMatrices() const {
+    return _selectionSdRes;
+}
+
+PlotTypes::PlotType pointprocessing::selectionResolvedFitType() const {
+    return _selectionResolvedFitType;
+}
+
+QLineSeries* pointprocessing::selectionFitSeries() const {
+    return _selectionFitSeries;
+}
+
+void pointprocessing::setSelectionProgress(Progress p) {
+    if (_selectionProgress == p) return;
+
+    _selectionProgress = p;
+    emit selectionProgressChanged();
 }
 
 #include "moc_pointprocessing.cpp"

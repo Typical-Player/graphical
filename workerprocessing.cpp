@@ -67,10 +67,14 @@ void workerprocessing::fitLinear(const QList<QPointF>& points, Result& result, b
 		y[i] = points[i].y();
 	}
 
-	const auto beta = solve(X, y);
-
-	fillMatrices(result, X, y, beta, useFractions);
-    compute(points, result, beta, PlotTypes::LINEAL, useFractions);
+	try {
+		const auto beta = solve(X, y);
+		fillMatrices(result, X, y, beta, useFractions);
+		compute(points, result, beta, PlotTypes::LINEAL, useFractions);
+	} catch (const std::invalid_argument& e) {
+		emit error(QString("Linear fit failed: %1").arg(e.what()));
+		ok = false;
+	}
 }
 
 void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
@@ -94,10 +98,14 @@ void workerprocessing::fitQuadratic(const QList<QPointF>& points, Result& result
 		y[i] = points[i].y();
 	}
 
-	const auto beta = solve(X, y);
-
-	fillMatrices(result, X, y, beta, useFractions);
-    compute(points, result, beta, PlotTypes::CUADRATIC, useFractions);
+	try {
+		const auto beta = solve(X, y);
+		fillMatrices(result, X, y, beta, useFractions);
+		compute(points, result, beta, PlotTypes::CUADRATIC, useFractions);
+	} catch (const std::invalid_argument& e) {
+		emit error(QString("Quadratic fit failed: %1").arg(e.what()));
+		ok = false;
+	}
 }
 
 void workerprocessing::fitExponential(const QList<QPointF>& points, Result& result, bool& ok, const bool useFractions) {
@@ -127,11 +135,15 @@ void workerprocessing::fitExponential(const QList<QPointF>& points, Result& resu
 		y[i] = std::log(yi);
 	}
 
-	auto beta = solve(X, y);
-	const QList recovered = {std::exp(beta[0]), beta[1]};
-
-	fillMatrices(result, X, y, recovered, useFractions);
-    compute(points, result, recovered, PlotTypes::EXPONENTIAL, useFractions);
+	try {
+		auto beta = solve(X, y);
+		const QList recovered = {std::exp(beta[0]), beta[1]};
+		fillMatrices(result, X, y, recovered, useFractions);
+		compute(points, result, recovered, PlotTypes::EXPONENTIAL, useFractions);
+	} catch (const std::invalid_argument& e) {
+		emit error(QString("Exponential fit failed: %1").arg(e.what()));
+		ok = false;
+	}
 }
 
 void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result, bool &ok, bool useFractions)
@@ -146,7 +158,11 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
     auto tryFit = [&](auto fitFn, PlotTypes::PlotType type) -> Candidate {
         Result r{};
         bool fitOk = true;
-        (this->*fitFn)(points, r, fitOk, useFractions);
+    	try {
+    		(this->*fitFn)(points, r, fitOk, useFractions);
+    	} catch (const std::invalid_argument&) {
+    		fitOk = false;
+    	}
         if (!fitOk || isCanceled()) return {};
 
         double sse = 0;
@@ -164,8 +180,6 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
             sse += diff * diff;
         }
 
-        // scale penalty
-        // penalty is calculated based on parameter count
         const int paramCount = (type == PlotTypes::CUADRATIC) ? 3 : 2;
         const int n = points.size();
         const double adjustedSse = sse * (1.0 + static_cast<double>(paramCount) / n);

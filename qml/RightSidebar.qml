@@ -13,6 +13,10 @@ Rectangle {
     property real probeX: NaN
     property real probeY: NaN
 
+    ConfirmDialog {
+        id: confirmDialog
+    }
+
     color: "transparent"
 
     ColorGroup { id: colorPallete }
@@ -67,20 +71,43 @@ Rectangle {
         }
 
         Rectangle {
-            Layout.fillWidth: true; implicitHeight: 36
-            color: colorPallete.button
+            Layout.fillWidth: true; implicitHeight: 26
+            visible: root.pointsModel.selectionActive
+            color: Qt.rgba(0.22, 0.55, 1.0, 0.12)
 
             RowLayout {
-                anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                anchors.rightMargin: 4
+                spacing: 4
+
                 Label {
-                    text: "Points  (" + root.pointsModel.count + ")"
-                    font.bold: true; color: colorPallete.text; Layout.fillWidth: true
+                    text: root.pointsModel.count + " of "
+                        + root.pointsModel.totalCount + " points in selection"
+                    font.pointSize: 8
+                    color: Qt.rgba(0.15, 0.40, 0.85, 1.0)
+                    Layout.fillWidth: true
                 }
+
                 ToolButton {
-                    icon.source: "qrc:/icons/clear.svg"; icon.color: colorPallete.text
-                    enabled: root.pointsModel.totalCount > 0
-                    onClicked: root.pointsModel.backend.clear()
-                    ToolTip.delay: 1000; ToolTip.visible: hovered; ToolTip.text: "Clear all points"
+                    text: "Keep only selection"
+                    font.pointSize: 7
+                    implicitHeight: 20
+                    ToolTip.delay: 1000
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Delete all points outside the selection"
+
+                    onClicked: {
+                        confirmDialog.message = "Keep only the " + root.pointsModel.count
+                            + " selected points and delete the rest?";
+                        confirmDialog.confirmed.disconnect(confirmDialog.confirmed)
+                        confirmDialog.confirmed.connect(() => {
+                            root.backend.keepOnlySelection();
+                            root.backend.clearSelection();
+                            root.pointsModel.selectionActive = false;
+                        })
+                        confirmDialog.open()
+                    }
                 }
             }
         }

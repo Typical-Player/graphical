@@ -66,10 +66,19 @@ ApplicationWindow {
         function onSelectionCommitted(dataRect) {
             pointsModel.selectionRect = dataRect;
             pointsModel.selectionActive = true;
+
+            const r = dataRect;
+            const all = processing.allPoints();
+            const filtered = all.filter(p =>
+                p.x >= r.x && p.x <= r.x + r.width &&
+                p.y >= r.y && p.y <= r.y + r.height
+            );
+            processing.setSelectionPoints(filtered);
         }
 
         function onSelectionCleared() {
             pointsModel.selectionActive = false;
+            processing.clearSelection();
         }
     }
 

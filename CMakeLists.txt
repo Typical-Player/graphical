@@ -55,6 +55,7 @@ qt_add_qml_module(appgraphical
         qml/Spinner.qml
         qml/RightSidebar.qml
         qml/PointInputDelegate.qml
+        qml/ConfirmDialog.qml
         SOURCES
         pointprocessing.cpp
         pointprocessing.h

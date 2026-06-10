@@ -116,60 +116,118 @@ Rectangle {
 		}
 	}
 
-	ColumnLayout {
-		anchors.fill: parent
-		anchors.margins: 8
-		spacing: 2
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 8
+        spacing: 2
 
-		RowLayout {
-			Layout.fillWidth: true
+        RowLayout {
+            Layout.fillWidth: true
 
-			Label {
-				id: statusLabel
-				text: root.statusText()
-				color: root.backend.progress === PointProcessing.READY ? "#80ff80" : "white"
-				font.family: "Helvetica"
-                font.pointSize: 24
-                font.bold: true
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-				Behavior on text {
-					SequentialAnimation {
-						NumberAnimation {
-							target: statusLabel
-							property: "opacity"
-							to: 0
-							duration: 120
-						}
-						PropertyAction {
-							target: statusLabel
-							property: "text"
-						}
-						NumberAnimation {
-							target: statusLabel
-							property: "opacity"
-							to: 1
-							duration: 120
-						}
-					}
-				}
+                Label {
+                    id: statusLabel
+                    text: root.statusText()
+                    color: root.backend.progress === PointProcessing.READY ? "#80ff80" : "white"
+                    font.family: "Helvetica"
+                    font.pointSize: 24
+                    font.bold: true
 
-				Behavior on color {
-					ColorAnimation {
-						duration: 240
-						easing.type: Easing.InOutQuad
-					}
-				}
-			}
+                    Behavior on text {
+                        SequentialAnimation {
+                            NumberAnimation {
+                                target: statusLabel
+                                property: "opacity"
+                                to: 0
+                                duration: 120
+                            }
+                            PropertyAction {
+                                target: statusLabel
+                                property: "text"
+                            }
+                            NumberAnimation {
+                                target: statusLabel
+                                property: "opacity"
+                                to: 1
+                                duration: 120
+                            }
+                        }
+                    }
 
-			Item {
-				Layout.fillWidth: true
-			}
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 240
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+                }
 
-			Spinner {
-				running: root.backend.progress === PointProcessing.PROCESSING
-				Layout.preferredWidth: 24
-				Layout.preferredHeight: 24
-			}
-		}
-	}
+                RowLayout {
+                    visible: root.backend.hasSelectionResult ||
+                        root.backend.selectionProgress === PointProcessing.PROCESSING
+                    spacing: 6
+
+                    Rectangle {
+                        width: 3
+                        height: selectionEquationLabel.implicitHeight
+                        radius: 1
+                        color: Qt.rgba(0.85, 0.45, 0.10, 1.0)
+                        visible: root.backend.hasSelectionResult
+                    }
+
+                    Label {
+                        id: selectionEquationLabel
+                        visible: root.backend.hasSelectionResult
+                        text: "Selection: " + root.backend.selectionResultEquation
+                        color: Qt.rgba(1.0, 0.75, 0.45, 1.0)
+                        font.family: "Helvetica"
+                        font.pointSize: 11
+                        font.bold: true
+
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation {
+                                    target: selectionEquationLabel
+                                    property: "opacity"
+                                    to: 0
+                                    duration: 120
+                                }
+                                PropertyAction {
+                                    target: selectionEquationLabel
+                                    property: "text"
+                                }
+                                NumberAnimation {
+                                    target: selectionEquationLabel
+                                    property: "opacity"
+                                    to: 1
+                                    duration: 120
+                                }
+                            }
+                        }
+                    }
+
+                    Spinner {
+                        running: root.backend.selectionProgress === PointProcessing.PROCESSING
+                        visible: running
+                        Layout.preferredWidth: 16
+                        Layout.preferredHeight: 16
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            Spinner {
+                running: root.backend.progress === PointProcessing.PROCESSING
+                visible: running
+                Layout.preferredWidth: 24
+                Layout.preferredHeight: 24
+            }
+        }
+    }
 }

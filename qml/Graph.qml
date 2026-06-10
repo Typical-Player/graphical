@@ -243,6 +243,8 @@ Rectangle {
             view.addSeries(root.backend.pointSeries);
             if (root.showBestFit && !view.hasSeries(root.backend.fitSeries))
                 view.addSeries(root.backend.fitSeries);
+
+            view.addSeries(root.backend.selectionFitSeries);
             root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max);
         }
     }
