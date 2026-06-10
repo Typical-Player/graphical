@@ -23,7 +23,7 @@ Rectangle {
     }
 
     width: ListView.view.width; implicitHeight: 34
-    color: row.index % 2 === 0 ? colorPallete.base : colorPallete.alternateBase
+    color: row.index % 2 === 0 ? colorPallete.window : colorPallete.base
 
     RowLayout {
         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 4; spacing: 4

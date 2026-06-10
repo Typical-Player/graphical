@@ -121,9 +121,11 @@ Item {
         ShapePath {
             strokeWidth: Math.max(1, Math.round(2 * root.sizeFactor))
             strokeColor: "black"
+
             capStyle: ShapePath.FlatCap
             joinStyle: ShapePath.MiterJoin
             pathHints: ShapePath.PathLinear
+            fillColor: "transparent"
 
             startX: root.padX + root.bracketW
             startY: root.padY
@@ -146,6 +148,8 @@ Item {
             strokeColor: "black"
             capStyle: ShapePath.FlatCap
             joinStyle: ShapePath.MiterJoin
+            pathHints: ShapePath.PathLinear
+            fillColor: "transparent"
 
             startX: root.padX + root.bracketW + root.gridW
             startY: root.padY

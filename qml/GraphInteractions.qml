@@ -69,6 +69,12 @@ Item {
             property real lastX: 0
             property real lastY: 0
 
+            readonly property bool isInsidePlotArea: {
+                const area = root.gv.plotArea;
+                return mouseX >= area.x && mouseX <= (area.x + area.width) &&
+                    mouseY >= area.y && mouseY <= (area.y + area.height);
+            }
+
             onPressed: function (mouse) {
                 lastX = mouseX;
                 lastY = mouseY;
@@ -105,6 +111,7 @@ Item {
                     if (root.isMobile) {
                         switch (root.touchMode) {
                         case 0: // Draw
+                            if (!isInsidePlotArea) return;
                             const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
                             if (dist >= Math.max(1, root.bSize / 4)) {
                                 root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
@@ -113,6 +120,7 @@ Item {
                             }
                             break;
                         case 1: // Erase
+                            if (!isInsidePlotArea) return;
                             root.gu.erasePoints(mouseX, mouseY, root.bSize);
                             break;
                         case 2:
@@ -133,10 +141,12 @@ Item {
                     }
 
                     if (mouse.modifiers & Qt.ControlModifier) {
+                        if (!isInsidePlotArea) return;
                         root.gu.erasePoints(mouseX, mouseY, root.bSize);
                         return;
                     }
 
+                    if (!isInsidePlotArea) return;
                     const distD = Math.hypot(mouseX - lastX, mouseY - lastY);
                     if (distD >= Math.max(1, root.bSize / 4)) {
                         root.gu.addPoint(mouseX, mouseY, root.bDensity, root.bSize);
@@ -161,6 +171,9 @@ Item {
                         root.selectionCleared();
                     return;
                 }
+
+                if (!isInsidePlotArea)
+                    return;
 
                 if (root.isMobile) {
                     switch (root.touchMode) {

@@ -3,13 +3,15 @@
 #include <QtQmlIntegration/qqmlintegration.h>
 #include <QValueAxis>
 #include <QRandomGenerator>
-#include "pointprocessing.h"
+#include <QRectF>
+
+#include "pointdata.h"
 
 class graphutils : public QObject {
 	Q_OBJECT
 	QML_ELEMENT
 	QML_NAMED_ELEMENT(GraphUtils)
-	Q_PROPERTY(pointprocessing* backend READ backend WRITE setBackend NOTIFY backendChanged REQUIRED FINAL)
+	Q_PROPERTY(PointData* data READ data WRITE setData NOTIFY dataChanged REQUIRED FINAL)
 	Q_PROPERTY(QValueAxis* xAxis READ xAxis WRITE setXAxis NOTIFY xAxisChanged REQUIRED FINAL)
 	Q_PROPERTY(QValueAxis* yAxis READ yAxis WRITE setYAxis NOTIFY yAxisChanged REQUIRED FINAL)
 	Q_PROPERTY(QRectF plotArea READ plotArea WRITE setPlotArea NOTIFY plotAreaChanged REQUIRED FINAL)
@@ -20,8 +22,8 @@ public:
 	[[nodiscard]] QRectF plotArea() const;
 	void setPlotArea(const QRectF& plotArea);
 
-	[[nodiscard]] pointprocessing* backend() const;
-	void setBackend(pointprocessing* backend);
+	[[nodiscard]] PointData* data() const;
+	void setData(PointData* data);
 
 	[[nodiscard]] QValueAxis* xAxis() const;
 	void setXAxis(QValueAxis* xAxis);
@@ -29,15 +31,14 @@ public:
 	[[nodiscard]] QValueAxis* yAxis() const;
 	void setYAxis(QValueAxis* yAxis);
 
-	Q_INVOKABLE void addPoint(qint64 mouseX, qint64 mouseY, qint64 count, qint64 radius);
-	Q_INVOKABLE void erasePoints(qint64 mouseX, qint64 mouseY, qint64 brushSize) const;
-
-	Q_INVOKABLE void recenter() const;
-
-	Q_INVOKABLE [[nodiscard]] int nearestPointIndex(qreal mouseX, qreal mouseY, qreal thresholdPx) const;
+public slots:
+	void addPoint(qint64 mouseX, qint64 mouseY, qint64 count, qint64 radius);
+	void erasePoints(qint64 mouseX, qint64 mouseY, qint64 brushSize) const;
+	void recenter() const;
+	[[nodiscard]] int nearestPointIndex(qreal mouseX, qreal mouseY, qreal thresholdPx) const;
 
 signals:
-	void backendChanged();
+	void dataChanged();
 	void xAxisChanged();
 	void yAxisChanged();
 	void plotAreaChanged();
@@ -45,7 +46,7 @@ signals:
 private:
 	[[nodiscard]] bool checkValid() const;
 
-	pointprocessing* _backend{};
+	PointData* _pointData{};
 	QValueAxis* _xAxis{};
 	QValueAxis* _yAxis{};
 	QRectF _plotArea{};

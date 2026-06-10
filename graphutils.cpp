@@ -1,4 +1,5 @@
 #include "graphutils.h"
+
 graphutils::graphutils(QObject* parent) : QObject(parent) {}
 
 QRectF graphutils::plotArea() const {
@@ -12,15 +13,14 @@ void graphutils::setPlotArea(const QRectF& plotArea) {
 	emit plotAreaChanged();
 }
 
-pointprocessing* graphutils::backend() const {
-	return _backend;
+PointData * graphutils::data() const {
+	return _pointData;
 }
 
-void graphutils::setBackend(pointprocessing* backend) {
-	if (_backend == backend) return;
-
-	_backend = backend;
-	emit backendChanged();
+void graphutils::setData(PointData *data) {
+	if (_pointData == data) return;
+	_pointData = data;
+	emit dataChanged();
 }
 
 QValueAxis* graphutils::xAxis() const {
@@ -68,7 +68,7 @@ void graphutils::addPoint(const qint64 mouseX, const qint64 mouseY, const qint64
 		pts.append({wx, wy});
 	}
 
-	_backend->addPoints(pts);
+	_pointData->addPoints(pts);
 }
 
 void graphutils::erasePoints(const qint64 mouseX, const qint64 mouseY, const qint64 brushSize) const {
@@ -80,19 +80,19 @@ void graphutils::erasePoints(const qint64 mouseX, const qint64 mouseY, const qin
 	const auto cX = _xAxis->min() + (mouseX - _plotArea.x()) / _plotArea.width() * (_xAxis->max() - _xAxis->min());
 	const auto cY = _yAxis->max() - (mouseY - _plotArea.y()) / _plotArea.height() * (_yAxis->max() - _yAxis->min());
 	QList<QPointF> keep;
-	for (const auto& p : _backend->allPoints()) {
+	for (const auto& p : _pointData->allPoints()) {
 		const auto dx = (p.x() - cX) / radX;
 
 		if (const auto dy = (p.y() - cY) / radY; dx * dx + dy * dy > 1.0)
 			keep.push_back(p);
 	}
 
-	_backend->setAllPoints(keep);
+	_pointData->setAllPoints(keep);
 }
 
 void graphutils::recenter() const {
 	if (!checkValid()) return;
-	const auto& pts = _backend->allPoints();
+	const auto& pts = _pointData->allPoints();
 	if (pts.count() == 0) return;
 
 	auto minX = INFINITY;
@@ -118,7 +118,7 @@ void graphutils::recenter() const {
 
 int graphutils::nearestPointIndex(const qreal mouseX, const qreal mouseY, const qreal thresholdPx) const {
 	if (!checkValid()) return -1;
-	const auto& pts = _backend->allPoints();
+	const auto& pts = _pointData->allPoints();
 	if (pts.isEmpty()) return -1;
 
 	const qreal xScale = _plotArea.width()  / (_xAxis->max() - _xAxis->min());
@@ -131,14 +131,13 @@ int graphutils::nearestPointIndex(const qreal mouseX, const qreal mouseY, const 
 	for (int i = 0; i < pts.size(); ++i) {
 		const qreal sx = _plotArea.x() + (pts[i].x() - _xAxis->min()) * xScale;
 		const qreal sy = _plotArea.y() + (_yAxis->max() - pts[i].y()) * yScale;
-		const qreal d2 = (sx - mouseX) * (sx - mouseX) + (sy - mouseY) * (sy - mouseY);
-		if (d2 < bestDist2) { bestDist2 = d2; bestIdx = i; }
+		if (const qreal d2 = (sx - mouseX) * (sx - mouseX) + (sy - mouseY) * (sy - mouseY); d2 < bestDist2) { bestDist2 = d2; bestIdx = i; }
 	}
 	return bestIdx;
 }
 
 bool graphutils::checkValid() const {
-	return _backend && _xAxis && _yAxis;
+	return _pointData && _xAxis && _yAxis;
 }
 
 #include "moc_graphutils.cpp"

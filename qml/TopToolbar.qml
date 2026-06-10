@@ -5,10 +5,13 @@ import QtQuick.Dialogs
 import QtGraphs
 import graphical
 
-Rectangle {
+ToolBar {
     id: root
 
-    required property PointProcessing backend
+    property int plotType: 0
+    property int performanceMode: 0
+    property int pointCount: 0
+
     required property ValueAxis xAxis
     required property ValueAxis yAxis
 
@@ -67,12 +70,11 @@ Rectangle {
         selectedColor: "blue"
     }
 
-    color: "transparent"
-
         signal
     logoClicked
         signal
     recenterClicked
+    signal clearRequested()
 
     Flickable {
         anchors.fill: parent
@@ -114,16 +116,12 @@ Rectangle {
 
                 model: ["Lineal", "Cuadratic", "Exponential", "Automatic"]
 
-                onCurrentIndexChanged: root.backend.plotType = currentIndex
+                onCurrentIndexChanged: root.plotType = currentIndex
             }
 
             Label {
-                visible: root.backend.plotType === 3 && root.backend.progress === PointProcessing.READY
-                text: {
-                    const eq = root.backend.resultEquation;
-                    const m = eq.match(/\[Auto->(\w+)\]/);
-                    return m ? "-> " + m[1] : "";
-                }
+                visible: root.plotType === 3
+                text: ""
                 font.bold: true
                 color: colorPallete.text
                 leftPadding: 4
@@ -137,7 +135,7 @@ Rectangle {
                 icon.color: colorPallete.text
 
                 onClicked: {
-                    root.backend.clear();
+                    root.clearRequested()
 
                     root.xAxis.min = 0;
                     root.xAxis.max = 100;
@@ -148,7 +146,7 @@ Rectangle {
             }
 
             ToolButton {
-                enabled: root.backend.pointSeries.count > 0
+                enabled: root.pointCount > 0
 
                 icon.source: "qrc:/icons/recenter.svg"
                 icon.color: colorPallete.text
@@ -284,7 +282,7 @@ Rectangle {
 
                 model: ["Automatic", "High performance", "Low performance", "No optimizations"]
 
-                onCurrentIndexChanged: root.backend.performanceMode = currentIndex
+                onCurrentIndexChanged: root.performanceMode = currentIndex
             }
 
             ToolSeparator {

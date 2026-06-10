@@ -34,6 +34,12 @@ qt_add_executable(appgraphical
         third_party/lttb.hpp
         pointsmodel.cpp
         pointsmodel.h
+        fitcontroller.cpp
+        fitcontroller.h
+        pointdata.cpp
+        pointdata.h
+        displayprocessor.cpp
+        displayprocessor.h
 )
 
 qt_add_qml_module(appgraphical
@@ -49,19 +55,18 @@ qt_add_qml_module(appgraphical
         qml/PlotPoint.qml
         qml/GraphInteractions.qml
         qml/GraphicalDialog.qml
-        qml/ProcessingSidebarWrapper.qml
-        qml/ProcessingSidebar.qml
+        qml/LeftSidebar.qml
         qml/Matrix.qml
         qml/Spinner.qml
         qml/RightSidebar.qml
         qml/PointInputDelegate.qml
         qml/ConfirmDialog.qml
+        qml/Sidebar.qml
+        qml/MarqueeLabel.qml
         SOURCES
-        pointprocessing.cpp
-        pointprocessing.h
         graphutils.cpp
         graphutils.h
-        SOURCES plottypes.h
+        plottypes.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

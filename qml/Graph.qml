@@ -8,7 +8,10 @@ import graphical
 Rectangle {
     id: root
 
-    required property PointProcessing backend
+    required property FitController mainFit
+    required property PointData mainData
+    required property DisplayProcessor mainDisplay
+
     required property bool selectionMode
 
     required property bool showGrid
@@ -61,31 +64,38 @@ Rectangle {
         return Qt.rect(sx, sy, _selDataRect.width * xs, _selDataRect.height * ys);
     }
 
-    readonly property int _hovIdx: gi.ma.containsMouse && !gi.ma.pressed && root.backend.pointCount > 0 ? graphUtils.nearestPointIndex(gi.ma.mouseX, gi.ma.mouseY, 15) : -1
+    readonly property int _hovIdx: gi.ma.containsMouse && !gi.ma.pressed && root.mainData.pointCount > 0 ? graphUtils.nearestPointIndex(gi.ma.mouseX, gi.ma.mouseY, 15) : -1
 
-    readonly property point _hovPt: _hovIdx >= 0 ? root.backend.pointAt(_hovIdx) : Qt.point(0, 0)
-    readonly property double _hovResidual: _hovIdx >= 0 ? root.backend.residualAt(_hovIdx) : 0.0
+    readonly property point _hovPt: _hovIdx >= 0 ? root.mainData.pointAt(_hovIdx) : Qt.point(0, 0)
+    readonly property double _hovResidual: _hovIdx >= 0 ? root.mainFit.residualFor(_hovIdx) : 0.0
 
     onSelectionModeChanged: {
         if (!root.selectionMode) {
             root._hasSelection = false;
             root.selectionCleared();
+            if (view.hasSeries(root.mainDisplay.selectionFitSeries)){
+                view.removeSeries(root.mainDisplay.selectionFitSeries);
+            }
+        } else {
+            if (!view.hasSeries(root.mainDisplay.selectionFitSeries)){
+                view.addSeries(root.mainDisplay.selectionFitSeries);
+            }
         }
     }
 
     onShowBestFitChanged: {
         if (root.showBestFit) {
-            if (!view.hasSeries(root.backend.fitSeries))
-                view.addSeries(root.backend.fitSeries);
+            if (!view.hasSeries(root.mainDisplay.fit))
+                view.addSeries(root.mainDisplay.fit);
 
-            if (!view.hasSeries(root.backend.residualSeries))
-                view.addSeries(root.backend.residualSeries);
+            if (!view.hasSeries(root.mainDisplay.residualSeries))
+                view.addSeries(root.mainDisplay.residualSeries);
         } else {
-            if (view.hasSeries(root.backend.fitSeries))
-                view.removeSeries(root.backend.fitSeries);
+            if (view.hasSeries(root.mainDisplay.fitSeries))
+                view.removeSeries(root.mainDisplay.fitSeries);
 
-            if (view.hasSeries(root.backend.residualSeries))
-                view.removeSeries(root.backend.residualSeries);
+            if (view.hasSeries(root.mainDisplay.residualSeries))
+                view.removeSeries(root.mainDisplay.residualSeries);
         }
     }
 
@@ -102,7 +112,7 @@ Rectangle {
 
     GraphUtils {
         id: graphUtils
-        backend: root.backend
+        data: root.mainData
         xAxis: xA
         yAxis: yA
         plotArea: view.plotArea
@@ -112,7 +122,6 @@ Rectangle {
         graphUtils.recenter();
     }
 
-    // Screen → data coord conversion on selection commit
     Connections {
         target: gi
         function onSelectionConfirmed(x1, y1, x2, y2) {
@@ -141,7 +150,6 @@ Rectangle {
         height: view.plotArea.height
         color: "transparent"
 
-        // Simulated dash via repeating segments
         Repeater {
             model: Math.ceil(view.plotArea.height / 10)
             Rectangle {
@@ -154,7 +162,6 @@ Rectangle {
         }
     }
 
-    // Intersection dot
     Rectangle {
         visible: root._probeVisible
         x: root._probeSX - 5
@@ -167,7 +174,6 @@ Rectangle {
         z: 10
     }
 
-    // Label beside the dot — flips to left side when near right edge
     Rectangle {
         id: probeLabel
         visible: root._probeVisible
@@ -226,26 +232,28 @@ Rectangle {
         axisX: ValueAxis {
             id: xA
             subTickCount: 1
-            onMinChanged: root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
-            onMaxChanged: root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+            onMinChanged: root.mainDisplay.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+            onMaxChanged: root.mainDisplay.updateFitRange(xA.min, xA.max, yA.min, yA.max)
         }
         axisY: ValueAxis {
             id: yA
             subTickCount: 1
-            onMinChanged: root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
-            onMaxChanged: root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+            onMinChanged: root.mainDisplay.updateFitRange(xA.min, xA.max, yA.min, yA.max)
+            onMaxChanged: root.mainDisplay.updateFitRange(xA.min, xA.max, yA.min, yA.max)
         }
 
-        onPlotAreaChanged: root.backend.plotArea = view.plotArea
+        onPlotAreaChanged: root.mainDisplay.plotArea = view.plotArea
 
         Component.onCompleted: {
-            root.backend.pointSeries.pointDelegate = plotPointDelegate;
-            view.addSeries(root.backend.pointSeries);
-            if (root.showBestFit && !view.hasSeries(root.backend.fitSeries))
-                view.addSeries(root.backend.fitSeries);
+            root.mainDisplay.pointSeries.pointDelegate = plotPointDelegate;
+            view.addSeries(root.mainDisplay.pointSeries);
+            if (root.showBestFit && !view.hasSeries(root.mainDisplay.fitSeries))
+                view.addSeries(root.mainDisplay.fitSeries);
 
-            view.addSeries(root.backend.selectionFitSeries);
-            root.backend.updateFitRange(xA.min, xA.max, yA.min, yA.max);
+            if (root.selectionMode && !view.hasSeries(root.mainDisplay.selectionFitSeries)) {
+                view.addSeries(root.mainDisplay.selectionFitSeries);
+            }
+            root.mainDisplay.updateFitRange(xA.min, xA.max, yA.min, yA.max);
         }
     }
 
@@ -337,7 +345,7 @@ Rectangle {
                 color: colorPallete.text
             }
             Label {
-                visible: root.backend.progress === PointProcessing.READY
+                visible: root.mainFit.progress === FitController.READY
                 text: {
                     const r = root._hovResidual;
                     return "Δy:  " + (r >= 0 ? "+" : "") + r.toFixed(4);

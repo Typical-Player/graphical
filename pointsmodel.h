@@ -3,13 +3,17 @@
 
 #include <QAbstractListModel>
 #include <QtQmlIntegration/qqmlintegration.h>
-#include "pointprocessing.h"
+#include <QRectF>
+#include "pointdata.h"
+#include "fitcontroller.h"
 
 class PointsModel : public QAbstractListModel {
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(pointprocessing* backend READ backend WRITE setBackend NOTIFY backendChanged FINAL)
+    Q_PROPERTY(PointData* source READ source WRITE setSource NOTIFY sourceChanged FINAL)
+    Q_PROPERTY(FitController* fit READ fit WRITE setFit NOTIFY fitChanged FINAL)
+
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged FINAL)
     Q_PROPERTY(int totalCount READ totalCount NOTIFY totalCountChanged FINAL)
     Q_PROPERTY(bool selectionActive READ selectionActive WRITE setSelectionActive NOTIFY selectionActiveChanged FINAL)
@@ -39,9 +43,13 @@ public:
 
     [[nodiscard]] QHash<int, QByteArray> roleNames() const override;
 
-    [[nodiscard]] pointprocessing *backend() const;
+    [[nodiscard]] PointData *source() const;
 
-    void setBackend(pointprocessing *backend);
+    void setSource(PointData *s);
+
+    [[nodiscard]] FitController *fit() const;
+
+    void setFit(FitController *f);
 
     [[nodiscard]] bool selectionActive() const;
 
@@ -51,6 +59,7 @@ public:
 
     void setSelectionRect(const QRectF &rect);
 
+public slots:
     Q_INVOKABLE void appendPoint(qreal x, qreal y);
 
     Q_INVOKABLE void removePoint(qint64 visualRow);
@@ -60,7 +69,9 @@ public:
     Q_INVOKABLE [[nodiscard]] QPointF pointAt(int visualRow) const;
 
 signals:
-    void backendChanged();
+    void sourceChanged();
+
+    void fitChanged();
 
     void countChanged();
 
@@ -71,8 +82,7 @@ signals:
     void selectionRectChanged();
 
 private slots:
-    void onBackendDataChanged();
-
+    void onPointsChanged(); // was onBackendDataChanged
     void onFitUpdated();
 
 private:
@@ -80,7 +90,9 @@ private:
 
     [[nodiscard]] int resolveRow(int visualRow) const;
 
-    pointprocessing *_backend{};
+    PointData *_source{};
+    FitController *_fit{};
+
     QList<QPointF> _points{};
     QList<int> _filteredIndices{};
     bool _selfModifying{false};
@@ -88,4 +100,4 @@ private:
     QRectF _selectionRect{};
 };
 
-#endif // GRAPHICAL_POINTSMODEL_H
+#endif

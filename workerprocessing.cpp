@@ -1,6 +1,6 @@
 #include "workerprocessing.h"
-#include "pointprocessing.h"
 #include <QMutexLocker>
+#include <QPointF>
 
 workerprocessing::workerprocessing(QObject* parent) : QObject(parent) {}
 
@@ -155,7 +155,7 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
         bool valid = false;
     };
 
-    auto tryFit = [&](auto fitFn, PlotTypes::PlotType type) -> Candidate {
+    auto tryFit = [&](auto fitFn, const PlotTypes::PlotType type) -> Candidate {
         Result r{};
         bool fitOk = true;
     	try {
@@ -180,7 +180,7 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
             sse += diff * diff;
         }
 
-        const int paramCount = (type == PlotTypes::CUADRATIC) ? 3 : 2;
+        const int paramCount = type == PlotTypes::CUADRATIC ? 3 : 2;
         const int n = points.size();
         const double adjustedSse = sse * (1.0 + static_cast<double>(paramCount) / n);
 
@@ -195,12 +195,12 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
 
     if (isCanceled()) { emit canceled(); return; }
 
-    const auto best = std::min_element(candidates.begin(), candidates.end(),
-                                        [](const Candidate& a, const Candidate& b) {
-                                            if (!a.valid) return false;
-                                            if (!b.valid) return true;
-                                            return a.sse < b.sse;
-                                        });
+    const auto best = std::ranges::min_element(candidates,
+                                               [](const Candidate& a, const Candidate& b) {
+	                                               if (!a.valid) return false;
+	                                               if (!b.valid) return true;
+	                                               return a.sse < b.sse;
+                                               });
 
     if (best == candidates.end() || !best->valid) {
         emit error("Automatic fit: no valid model found");
@@ -405,10 +405,10 @@ QList<QList<QString>> workerprocessing::matToStrings(const g_matrix<double>& inp
 	QList<QList<QString>> out;
 	for (const auto& row : std::as_const(input._data)) {
 		QList<QString> rowStr;
-		std::transform(row.begin(), row.end(), std::back_inserter(rowStr),
-		               [&](const double x) {
-			               return prettyPrint(std::round(x * 1000.0) / 1000.0, useFractions);
-		               });
+		std::ranges::transform(row, std::back_inserter(rowStr),
+		                       [&](const double x) {
+			                       return prettyPrint(std::round(x * 1000.0) / 1000.0, useFractions);
+		                       });
 		out.push_back(rowStr);
 	}
 	return out;

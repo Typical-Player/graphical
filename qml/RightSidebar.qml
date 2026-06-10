@@ -7,19 +7,20 @@ Rectangle {
     id: root
 
     required property PointsModel pointsModel
-
-    required property PointProcessing backend
-
+    required property FitController fit
     property real probeX: NaN
     property real probeY: NaN
+
+    signal keepOnlySelectionRequested()
+    signal clearSelectionRequested()
 
     ConfirmDialog {
         id: confirmDialog
     }
 
-    color: "transparent"
-
     ColorGroup { id: colorPallete }
+
+    color: colorPallete.window
 
     ColumnLayout {
         anchors.fill: parent
@@ -29,7 +30,7 @@ Rectangle {
             Layout.fillWidth: true
             implicitHeight: probeCol.implicitHeight + 16
             color: colorPallete.button
-            visible: root.backend.progress === PointProcessing.READY
+            visible: root.fit.progress === FitController.READY
 
             ColumnLayout {
                 id: probeCol
@@ -102,9 +103,9 @@ Rectangle {
                             + " selected points and delete the rest?";
                         confirmDialog.confirmed.disconnect(confirmDialog.confirmed)
                         confirmDialog.confirmed.connect(() => {
-                            root.backend.keepOnlySelection();
-                            root.backend.clearSelection();
-                            root.pointsModel.selectionActive = false;
+                            root.keepOnlySelectionRequested()
+                            root.clearSelectionRequested()
+                            root.pointsModel.selectionActive = false
                         })
                         confirmDialog.open()
                     }
@@ -141,7 +142,7 @@ Rectangle {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: colorPallete.mid; opacity: 0.4 }
+        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: colorPallete.mid; opacity: 0.4 }
 
         ListView {
             id: listView
@@ -153,7 +154,7 @@ Rectangle {
             delegate: PointInputDelegate {}
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: colorPallete.mid; opacity: 0.4 }
+        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: colorPallete.mid; opacity: 0.4 }
 
         Rectangle {
             Layout.fillWidth: true; implicitHeight: 44

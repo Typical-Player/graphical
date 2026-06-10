@@ -6,6 +6,10 @@ import graphical
 ApplicationWindow {
     id: root
 
+    ColorGroup {
+        id: colorPallete
+    }
+
     width: 1300
     height: 700
 
@@ -20,13 +24,59 @@ ApplicationWindow {
     leftPadding: SafeArea.margins.left
     rightPadding: SafeArea.margins.right
 
+    color: colorPallete.window
+
     readonly property bool mobile: width <= 700
 
-    ColorGroup {
-        id: colorPallete
+
+    PointData {
+        id: mainData
     }
 
-    color: colorPallete.window
+    PointData {
+        id: selectionData
+    }
+
+    FitController {
+        id: mainFit
+        source: mainData
+        plotType: topBar.plotType
+        useFractions: topBar.useFractions
+    }
+
+    FitController {
+        id: selectionFit
+        source: selectionData
+        plotType: topBar.plotType
+        useFractions: topBar.useFractions
+    }
+
+    DisplayProcessor {
+        id: display
+        source: mainData
+        fit: mainFit
+        selectionSource: selectionData
+        selectionFit: selectionFit
+        fitSamples: 200
+    }
+
+    PointsModel {
+        id: pointsModel
+        source: mainData
+        fit: mainFit
+    }
+
+    Binding {
+        target: mainFit; property: "plotType";
+        value: topBar.plotType
+    }
+    Binding {
+        target: display; property: "performanceMode";
+        value: topBar.performanceMode
+    }
+
+    property real probeX: NaN
+    readonly property real probeY: isNaN(probeX) ? NaN : mainFit.evaluateAt(probeX)
 
     GraphicalDialog {
         id: aboutDialog
@@ -47,19 +97,6 @@ ApplicationWindow {
         }
     }
 
-    PointProcessing {
-        id: processing
-        useFractions: topBar.useFractions
-    }
-
-    PointsModel {
-        id: pointsModel
-        backend: processing
-    }
-
-    property real probeX: NaN
-    readonly property real probeY: isNaN(probeX) ? NaN : processing.evaluateFitAt(probeX)
-
     Connections {
         target: graph
 
@@ -68,178 +105,95 @@ ApplicationWindow {
             pointsModel.selectionActive = true;
 
             const r = dataRect;
-            const all = processing.allPoints();
+            const all = mainData.allPoints;
             const filtered = all.filter(p =>
                 p.x >= r.x && p.x <= r.x + r.width &&
                 p.y >= r.y && p.y <= r.y + r.height
             );
-            processing.setSelectionPoints(filtered);
+
+            selectionData.setAllPoints(filtered);
+            selectionFit.source = selectionData;
         }
 
         function onSelectionCleared() {
             pointsModel.selectionActive = false;
-            processing.clearSelection();
+            selectionData.clear();
+            selectionFit.source = selectionData;
         }
     }
 
     Item {
         anchors.fill: parent
-        ToolBar {
-            id: appToolbar
 
-            z: 200
-
+        TopToolbar {
+            id: topBar
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
 
             anchors.topMargin: SafeArea.margins.top
+            leftPadding: 20
+            rightPadding: 20
 
             height: root.mobile ? 52 : 40
 
-            TopToolbar {
-                id: topBar
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                anchors.topMargin: 2
-                anchors.bottomMargin: 2
+            xAxis: graph.xAxis
+            yAxis: graph.yAxis
 
-                backend: processing
-                xAxis: graph.xAxis
-                yAxis: graph.yAxis
+            onLogoClicked: aboutDialog.open()
+            onRecenterClicked: graph.recenter()
 
-                onLogoClicked: aboutDialog.open()
-                onRecenterClicked: graph.recenter()
+            pointCount: mainData.pointCount
+            onClearRequested: {
+                mainData.clear()
+                graph.xAxis.min = 0; graph.xAxis.max = 100
+                graph.yAxis.min = 0; graph.yAxis.max = 100
             }
         }
 
-        Item {
+        SplitView {
             id: contentArea
 
-            anchors.top: appToolbar.bottom
+            anchors.top: topBar.bottom
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
 
-            SplitView {
-                id: splitView
+            orientation: Qt.Horizontal
 
-                anchors.fill: parent
-                orientation: Qt.Horizontal
+            Sidebar {
+                id: leftSidebar
+                SplitView.preferredWidth: leftSidebar.width
+                width: root.mobile ? 0 : (topBar.leftSidebarActive ? 450 : 0)
 
-                visible: !root.mobile
+                title: "Best Fit using the Least-Squares method"
+                isMobile: root.mobile
+                isActive: topBar.leftSidebarActive
+                mobileOverlayTarget: mobileOverlay
 
-                Rectangle {
-                    id: leftDesktopSidebar
-
-                    color: "transparent"
-
-                    visible: width > 0
-
-                    SplitView.preferredWidth: width
-
-                    width: topBar.leftSidebarActive ? 450 : 0
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 300
-                            easing.type: Easing.OutExpo
-                        }
-                    }
-
-                    clip: true
-
-                    ProcessingSidebarWrapper {
-                        anchors.fill: parent
-                        backend: processing
-                        isActive: width > 0
-                    }
-                }
-
-                ColumnLayout {
-                    SplitView.fillWidth: true
-                    spacing: 0
-
-                    Graph {
-                        id: graph
-
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        backend: processing
-
-                        selectionMode: topBar.selectionToggle
-                        showGrid: topBar.showGrid
-                        showGuides: !root.mobile && topBar.showGuide
-                        showBestFit: topBar.showBestFit
-
-                        selectedColor: topBar.selectedColor
-
-                        brushSize: topBar.brushSize
-                        brushDensity: topBar.brushDensity
-                        touchMode: topBar.touchMode
-
-                        probeX: root.probeX
-                        probeY: root.probeY
-                    }
-
-                    ResultBar {
-                        Layout.fillWidth: true
-                        implicitHeight: 100
-
-                        backend: processing
-                    }
-                }
-
-                Rectangle {
-                    id: rightDesktopSidebar
-
-                    color: "transparent"
-
-                    visible: width > 0
-
-                    SplitView.preferredWidth: width
-
-                    width: topBar.rightSidebarActive ? 320 : 0
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 300
-                            easing.type: Easing.OutExpo
-                        }
-                    }
-
-                    clip: true
-
-                    RightSidebar {
-                        anchors.fill: parent
-                        pointsModel: pointsModel
-                        backend: processing
-
-                        probeX: root.probeX
-                        probeY: root.probeY
-                        onProbeXChanged: root.probeX = probeX
-                    }
+                LeftSidebar {
+                    anchors.fill: parent
+                    fit: mainFit
                 }
             }
 
             ColumnLayout {
-                anchors.fill: parent
+                SplitView.fillWidth: true
                 spacing: 0
-                visible: root.mobile
 
                 Graph {
-                    id: mobileGraph
+                    id: graph
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    backend: processing
+                    mainFit: mainFit
+                    mainData: mainData
+                    mainDisplay: display
 
                     selectionMode: topBar.selectionToggle
                     showGrid: topBar.showGrid
-                    showGuides: false
+                    showGuides: !root.mobile && topBar.showGuide
                     showBestFit: topBar.showBestFit
 
                     selectedColor: topBar.selectedColor
@@ -250,157 +204,119 @@ ApplicationWindow {
 
                     probeX: root.probeX
                     probeY: root.probeY
+
+                    Button {
+                        id: toggleResultBtn
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.margins: 0
+                        z: 100
+
+                        padding: root.mobile ? 10 : 6
+                        text: resultBar.collapsed ? "Show results" : "Hide"
+
+                        onClicked: resultBar.collapsed = !resultBar.collapsed
+                    }
                 }
 
                 ResultBar {
+                    id: resultBar
                     Layout.fillWidth: true
-                    implicitHeight: 50
+                    implicitHeight: 100
 
-                    backend: processing
+                    property bool collapsed: root.mobile
+
+                    clip: true
+                    Layout.preferredHeight: collapsed ? 0 : (root.mobile ? 120 : 100)
+                    visible: Layout.preferredHeight > 0
+                    Behavior on Layout.preferredHeight {
+                        NumberAnimation {
+                            duration: 220
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    fit: mainFit
+                    selectionFit: selectionFit
                 }
             }
 
-            Rectangle {
-                id: mobileOverlay
+            Sidebar {
+                id: rightSidebar
+                SplitView.preferredWidth: rightSidebar.width
+                width: root.mobile ? 0 : (topBar.rightSidebarActive ? 320 : 0)
 
+                title: "Graph Properties"
+                isMobile: root.mobile
+                isActive: topBar.rightSidebarActive
+                mobileOverlayTarget: mobileOverlay
+
+                RightSidebar {
+                    anchors.fill: parent
+                    pointsModel: pointsModel
+                    fit: mainFit
+
+                    probeX: root.probeX
+                    probeY: root.probeY
+                    onProbeXChanged: root.probeX = probeX
+
+                    onKeepOnlySelectionRequested: mainData.setAllPoints(selectionData.allPoints)
+                    onClearSelectionRequested: {
+                        selectionData.clear()
+                        mainFit.source = mainData
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: mobileBackdrop
+            anchors.fill: parent
+            color: Qt.rgba(0, 0, 0, 0.5)
+            z: 99
+
+            visible: root.mobile && (topBar.leftSidebarActive || topBar.rightSidebarActive)
+
+            opacity: visible ? 1.0 : 0.0
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
+                }
+            }
+
+            MouseArea {
                 anchors.fill: parent
+                onClicked: {
+                    topBar.closeLeftSidebar()
+                    topBar.closeRightSidebar()
+                }
+            }
+        }
 
-                visible: root.mobile && (topBar.leftSidebarActive || topBar.rightSidebarActive)
+        Rectangle {
+            id: mobileOverlay
 
-                color: "#80000000"
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            z: 100
+            color: colorPallete.window
+            visible: root.mobile && (topBar.leftSidebarActive || topBar.rightSidebarActive)
+            clip: true
 
-                z: 90
+            readonly property real activeHeight: parent.height * 0.55
+            height: (root.mobile && (topBar.leftSidebarActive || topBar.rightSidebarActive)) ? activeHeight : 0
 
-                MouseArea {
-                    anchors.fill: parent
-
-                    onClicked: {
-                        topBar.closeLeftSidebar();
-                        topBar.closeRightSidebar();
-                    }
+            Behavior on height {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutExpo
                 }
             }
 
-            Rectangle {
-                id: mobileLeftSheet
-
-                visible: root.mobile && topBar.leftSidebarActive
-
-                z: 100
-
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-
-                height: parent.height * 0.55
-
-                radius: 16
-
-                color: colorPallete.base
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: 0
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 44
-
-                        color: colorPallete.window
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-
-                            Label {
-                                text: "Processing"
-                                font.bold: true
-                            }
-
-                            Item {
-                                Layout.fillWidth: true
-                            }
-
-                            ToolButton {
-                                icon.source: "qrc:/icons/close.svg"
-
-                                onClicked: topBar.closeLeftSidebar()
-                            }
-                        }
-                    }
-
-                    ProcessingSidebarWrapper {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        backend: processing
-                        isActive: topBar.leftSidebarActive
-                    }
-                }
-            }
-
-            Rectangle {
-                id: mobileRightSheet
-
-                visible: root.mobile && topBar.rightSidebarActive
-
-                z: 100
-
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-
-                height: parent.height * 0.55
-
-                radius: 16
-
-                color: colorPallete.base
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: 0
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 44
-
-                        color: colorPallete.window
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-
-                            Label {
-                                text: "Point editor"
-                                font.bold: true
-                            }
-
-                            Item {
-                                Layout.fillWidth: true
-                            }
-
-                            ToolButton {
-                                icon.source: "qrc:/icons/close.svg"
-
-                                onClicked: topBar.closeRightSidebar()
-                            }
-                        }
-                    }
-
-                    RightSidebar {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        pointsModel: pointsModel
-                        backend: processing
-
-                        probeX: root.probeX
-                        probeY: root.probeY
-                        onProbeXChanged: root.probeX = probeX
-                    }
-                }
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
             }
         }
     }

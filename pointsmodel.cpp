@@ -4,6 +4,36 @@
 PointsModel::PointsModel(QObject *parent) : QAbstractListModel(parent) {
 }
 
+PointData *PointsModel::source() const { return _source; }
+
+void PointsModel::setSource(PointData *s) {
+    if (_source == s) return;
+    if (_source) {
+        disconnect(_source, &PointData::pointsChanged, this, &PointsModel::onPointsChanged);
+    }
+    _source = s;
+    if (_source) {
+        connect(_source, &PointData::pointsChanged, this, &PointsModel::onPointsChanged);
+        onPointsChanged();
+    }
+    emit sourceChanged();
+}
+
+FitController *PointsModel::fit() const { return _fit; }
+
+void PointsModel::setFit(FitController *f) {
+    if (_fit == f) return;
+    if (_fit) {
+        disconnect(_fit, &FitController::resultChanged, this, &PointsModel::onFitUpdated);
+    }
+    _fit = f;
+    if (_fit) {
+        connect(_fit, &FitController::resultChanged, this, &PointsModel::onFitUpdated);
+        onFitUpdated();
+    }
+    emit fitChanged();
+}
+
 int PointsModel::rowCount(const QModelIndex &parent) const {
     if (parent.isValid()) return 0;
     return _selectionActive
@@ -13,7 +43,7 @@ int PointsModel::rowCount(const QModelIndex &parent) const {
 
 int PointsModel::totalCount() const { return static_cast<int>(_points.size()); }
 
-QVariant PointsModel::data(const QModelIndex &index, int role) const {
+QVariant PointsModel::data(const QModelIndex &index, const int role) const {
     if (!index.isValid() || index.row() >= rowCount()) return {};
     const int actual = resolveRow(index.row());
     if (actual < 0 || actual >= static_cast<int>(_points.size())) return {};
@@ -22,10 +52,11 @@ QVariant PointsModel::data(const QModelIndex &index, int role) const {
     switch (role) {
         case XRole: return p.x();
         case YRole: return p.y();
-        case ErrorRole: return _backend
-                                   ? _backend->residualAt(actual)
-                                   : std::numeric_limits<double>::quiet_NaN();
         case SourceIndexRole: return actual;
+        case ErrorRole:
+            return _fit
+                       ? _fit->residualFor(p)
+                       : std::numeric_limits<double>::quiet_NaN();
         default: return {};
     }
 }
@@ -61,26 +92,9 @@ QHash<int, QByteArray> PointsModel::roleNames() const {
     };
 }
 
-pointprocessing *PointsModel::backend() const { return _backend; }
-
-void PointsModel::setBackend(pointprocessing *backend) {
-    if (_backend == backend) return;
-    if (_backend) {
-        disconnect(_backend, &pointprocessing::dataChanged, this, &PointsModel::onBackendDataChanged);
-        disconnect(_backend, &pointprocessing::resultEquationChanged, this, &PointsModel::onFitUpdated);
-    }
-    _backend = backend;
-    if (_backend) {
-        connect(_backend, &pointprocessing::dataChanged, this, &PointsModel::onBackendDataChanged);
-        connect(_backend, &pointprocessing::resultEquationChanged, this, &PointsModel::onFitUpdated);
-        onBackendDataChanged();
-    }
-    emit backendChanged();
-}
-
 bool PointsModel::selectionActive() const { return _selectionActive; }
 
-void PointsModel::setSelectionActive(bool active) {
+void PointsModel::setSelectionActive(const bool active) {
     if (_selectionActive == active) return;
     _selectionActive = active;
     rebuildFilter();
@@ -95,14 +109,13 @@ void PointsModel::setSelectionRect(const QRectF &rect) {
     if (_selectionActive) rebuildFilter();
 }
 
-void PointsModel::appendPoint(qreal x, qreal y) {
-    if (!_backend) return;
+void PointsModel::appendPoint(const qreal x, const qreal y) {
+    if (!_source) return;
     _selfModifying = true;
     const QPointF pt{x, y};
     const int newActualIdx = static_cast<int>(_points.size());
-    const bool inSel = !_selectionActive || _selectionRect.contains(pt);
 
-    if (inSel) {
+    if (!_selectionActive || _selectionRect.contains(pt)) {
         const int visualRow = _selectionActive
                                   ? static_cast<int>(_filteredIndices.size())
                                   : newActualIdx;
@@ -114,17 +127,16 @@ void PointsModel::appendPoint(qreal x, qreal y) {
         _points.append(pt);
     }
 
-    _backend->addPoint(pt);
+    _source->addPoint(pt);
     _selfModifying = false;
     emit countChanged();
     emit totalCountChanged();
 }
 
-void PointsModel::removePoint(qint64 visualRow) {
-    if (!_backend) return;
-    if (visualRow < 0 || visualRow >= rowCount()) return;
-
+void PointsModel::removePoint(const qint64 visualRow) {
+    if (!_source || visualRow < 0 || visualRow >= rowCount()) return;
     const int actual = resolveRow(static_cast<int>(visualRow));
+
     _selfModifying = true;
     beginRemoveRows({}, static_cast<int>(visualRow), static_cast<int>(visualRow));
     _points.removeAt(actual);
@@ -133,32 +145,35 @@ void PointsModel::removePoint(qint64 visualRow) {
         for (int &fi: _filteredIndices) if (fi > actual) --fi;
     }
     endRemoveRows();
-    _backend->removePoint(actual);
+
+    _source->removePoint(actual);
     _selfModifying = false;
     emit countChanged();
     emit totalCountChanged();
 }
 
-void PointsModel::setPoint(qint64 visualRow, qreal x, qreal y) {
-    if (!_backend || visualRow < 0 || visualRow >= rowCount()) return;
+void PointsModel::setPoint(const qint64 visualRow, qreal x, qreal y) {
+    if (!_source || visualRow < 0 || visualRow >= rowCount()) return;
     const int actual = resolveRow(static_cast<int>(visualRow));
+
     _selfModifying = true;
     _points[actual] = {x, y};
     const QModelIndex mi = index(static_cast<int>(visualRow));
     emit dataChanged(mi, mi, {XRole, YRole});
-    _backend->setPoint(actual, {x, y});
+
+    _source->setPoint(actual, {x, y});
     _selfModifying = false;
 }
 
-QPointF PointsModel::pointAt(int visualRow) const {
-    if (visualRow < 0 || visualRow >= _filteredIndices.size()) return {};
+QPointF PointsModel::pointAt(const int visualRow) const {
+    if (visualRow < 0 || visualRow >= static_cast<int>(_filteredIndices.size())) return {};
     return _points.at(_filteredIndices.at(visualRow));
 }
 
-void PointsModel::onBackendDataChanged() {
+void PointsModel::onPointsChanged() {
     if (_selfModifying) return;
     beginResetModel();
-    _points = _backend->allPoints();
+    _points = _source->allPoints();
     if (_selectionActive) {
         _filteredIndices.clear();
         for (int i = 0; i < static_cast<int>(_points.size()); ++i)
@@ -186,6 +201,6 @@ void PointsModel::rebuildFilter() {
     emit countChanged();
 }
 
-int PointsModel::resolveRow(int visualRow) const {
+int PointsModel::resolveRow(const int visualRow) const {
     return _selectionActive ? _filteredIndices.at(visualRow) : visualRow;
 }
