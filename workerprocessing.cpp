@@ -195,7 +195,7 @@ void workerprocessing::fitAutomatic(const QList<QPointF> &points, Result &result
 
     if (isCanceled()) { emit canceled(); return; }
 
-    const auto best = std::ranges::min_element(candidates,
+    const auto best = std::min_element(candidates.begin(), candidates.end(),
                                                [](const Candidate& a, const Candidate& b) {
 	                                               if (!a.valid) return false;
 	                                               if (!b.valid) return true;
@@ -405,7 +405,7 @@ QList<QList<QString>> workerprocessing::matToStrings(const g_matrix<double>& inp
 	QList<QList<QString>> out;
 	for (const auto& row : std::as_const(input._data)) {
 		QList<QString> rowStr;
-		std::ranges::transform(row, std::back_inserter(rowStr),
+		std::transform(row.begin(), row.end(), std::back_inserter(rowStr),
 		                       [&](const double x) {
 			                       return prettyPrint(std::round(x * 1000.0) / 1000.0, useFractions);
 		                       });
