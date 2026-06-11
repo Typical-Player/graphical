@@ -85,19 +85,19 @@ Rectangle {
 
             readonly property bool processing: root.fit.progress === FitController.PROCESSING
 
-            emitRate: processing ? 10 : 5
+            emitRate: processing ? 50 : 5
             lifeSpan: processing ? 1800 : 4000
             lifeSpanVariation: processing ? 600 : 1500
 
             velocity: AngleDirection {
                 angle: 0
                 angleVariation: 360
-                magnitude: particleEmitter.processing ? 55 : 6
-                magnitudeVariation: particleEmitter.processing ? 30 : 4
+                magnitude: particleEmitter.processing ? 100 : 6
+                magnitudeVariation: particleEmitter.processing ? 100 : 4
             }
 
-            size: 100
-            sizeVariation: 10
+            size: processing ? 200 : 100
+            sizeVariation: processing ? 50 : 10
             endSize: 0
         }
     }
