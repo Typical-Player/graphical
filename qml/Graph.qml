@@ -81,10 +81,16 @@ Rectangle {
         if (!root.selectionMode) {
             root._hasSelection = false;
             root.selectionCleared();
+            if (root.mainDisplay && root.mainDisplay.selectionFitSeries) {
+                root.mainDisplay.selectionFitSeries.clear();
+            }
             if (view.hasSeries(root.mainDisplay.selectionFitSeries)){
                 view.removeSeries(root.mainDisplay.selectionFitSeries);
             }
         } else {
+            if (root.mainDisplay && root.mainDisplay.selectionFitSeries) {
+                root.mainDisplay.selectionFitSeries.clear();
+            }
             if (!view.hasSeries(root.mainDisplay.selectionFitSeries)){
                 view.addSeries(root.mainDisplay.selectionFitSeries);
             }
@@ -295,83 +301,33 @@ Rectangle {
         hasTouchInput: root._hasTouchInput
     }
 
-    Rectangle {
-        visible: gi.isDraggingSelection
-        x: gi.selectionDragRect.x
-        y: gi.selectionDragRect.y
-        width: gi.selectionDragRect.width
-        height: gi.selectionDragRect.height
-        color: Qt.rgba(0.22, 0.55, 1.0, 0.10)
-        border.color: Qt.rgba(0.22, 0.55, 1.0, 0.85)
-        border.width: 1
-    }
+    Item {
+        x: view.plotArea.x
+        y: view.plotArea.y
+        width: view.plotArea.width
+        height: view.plotArea.height
+        clip: true
 
-    Rectangle {
-        visible: root._hasSelection && root.selectionMode && !gi.isDraggingSelection
-        x: root._confirmedScreenRect.x
-        y: root._confirmedScreenRect.y
-        width: Math.max(0, root._confirmedScreenRect.width)
-        height: Math.max(0, root._confirmedScreenRect.height)
-        color: Qt.rgba(0.22, 0.55, 1.0, 0.07)
-        border.color: Qt.rgba(0.22, 0.55, 1.0, 0.65)
-        border.width: 1.5
-    }
+        Rectangle {
+            visible: gi.isDraggingSelection
+            x: gi.selectionDragRect.x - view.plotArea.x
+            y: gi.selectionDragRect.y - view.plotArea.y
+            width: gi.selectionDragRect.width
+            height: gi.selectionDragRect.height
+            color: Qt.rgba(0.22, 0.55, 1.0, 0.10)
+            border.color: Qt.rgba(0.22, 0.55, 1.0, 0.85)
+            border.width: 1
+        }
 
-    Rectangle {
-        id: hoverBox
-        visible: root._hovIdx >= 0 && !gi.isDraggingSelection
-        anchors.top: view.top
-        anchors.right: view.right
-        anchors.margins: 10
-        width: ttCol.implicitWidth + 20
-        height: ttCol.implicitHeight + 14
-        radius: 4
-        color: colorPallete.base
-        border.color: colorPallete.mid
-        border.width: 1
-
-        ColumnLayout {
-            id: ttCol
-            anchors.centerIn: parent
-            spacing: 3
-
-            Label {
-                text: "Point #" + (root._hovIdx + 1)
-                font.bold: true
-                font.pointSize: 8
-                color: colorPallete.text
-            }
-            Label {
-                text: "X :  " + root._hovPt.x.toFixed(4)
-                font.pointSize: 8
-                font.family: "Courier New"
-                color: colorPallete.text
-            }
-            Label {
-                text: "Y :  " + root._hovPt.y.toFixed(4)
-                font.pointSize: 8
-                font.family: "Courier New"
-                color: colorPallete.text
-            }
-            Label {
-                visible: root.mainFit.progress === FitController.READY
-                text: {
-                    const r = root._hovResidual;
-                    return "Δy:  " + (r >= 0 ? "+" : "") + r.toFixed(4);
-                }
-                font.pointSize: 8
-                font.family: "Courier New"
-                color: {
-                    const r = root._hovResidual;
-                    if (isNaN(r))
-                        return colorPallete.text;
-                    if (r > 0.001)
-                        return "#c0522a";
-                    if (r < -0.001)
-                        return "#2a7ac0";
-                    return "#2a9d2a";
-                }
-            }
+        Rectangle {
+            visible: root._hasSelection && root.selectionMode && !gi.isDraggingSelection
+            x: root._confirmedScreenRect.x - view.plotArea.x
+            y: root._confirmedScreenRect.y - view.plotArea.y
+            width: Math.max(0, root._confirmedScreenRect.width)
+            height: Math.max(0, root._confirmedScreenRect.height)
+            color: Qt.rgba(0.22, 0.55, 1.0, 0.07)
+            border.color: Qt.rgba(0.22, 0.55, 1.0, 0.65)
+            border.width: 1.5
         }
     }
 }
