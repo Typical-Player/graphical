@@ -209,11 +209,11 @@ ToolBar {
             }
 
             ToolSeparator {
-                visible: root.mobile
+                visible: root.mobile || forceTouchToggle.checked
             }
 
             ToolButton {
-                visible: root.mobile
+                visible: root.mobile || forceTouchToggle.checked
                 checkable: true
                 checked: true
                 ButtonGroup.group: touchModeGroup
@@ -223,7 +223,7 @@ ToolBar {
             }
 
             ToolButton {
-                visible: root.mobile
+                visible: root.mobile || forceTouchToggle.checked
                 checkable: true
                 ButtonGroup.group: touchModeGroup
                 icon.source: "qrc:/icons/eraser.svg"
@@ -232,7 +232,7 @@ ToolBar {
             }
 
             ToolButton {
-                visible: root.mobile
+                visible: root.mobile || forceTouchToggle.checked
                 checkable: true
                 ButtonGroup.group: touchModeGroup
                 icon.source: "qrc:/icons/drag.svg"

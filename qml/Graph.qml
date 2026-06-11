@@ -274,7 +274,7 @@ Rectangle {
 
     GuideOverlay {
         anchors.fill: view
-        visible: root.showGuides && gi.ma.containsMouse && !root.selectionMode
+        visible: root.showGuides && gi.ma.containsMouse
         mouseArea: gi.ma
         graphView: view
         xAxis: xA
