@@ -205,6 +205,8 @@ ApplicationWindow {
                     probeX: root.probeX
                     probeY: root.probeY
 
+                    forceTouchInput: topBar.touchModeToggle
+
                     Button {
                         id: toggleResultBtn
                         anchors.bottom: parent.bottom

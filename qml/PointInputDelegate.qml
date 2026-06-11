@@ -30,7 +30,8 @@ Rectangle {
 
         Label {
             text: row.sourceIndex + 1
-            color: colorPallete.mid; font.pointSize: 8
+            color: colorPallete.text;
+            font.pointSize: 8
             Layout.preferredWidth: 34
         }
 

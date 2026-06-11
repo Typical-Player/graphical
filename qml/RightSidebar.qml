@@ -16,6 +16,12 @@ Rectangle {
 
     ConfirmDialog {
         id: confirmDialog
+
+        onConfirmed: {
+            root.keepOnlySelectionRequested()
+            root.clearSelectionRequested()
+            root.pointsModel.selectionActive = false
+        }
     }
 
     ColorGroup { id: colorPallete }
@@ -101,29 +107,9 @@ Rectangle {
                     onClicked: {
                         confirmDialog.message = "Keep only the " + root.pointsModel.count
                             + " selected points and delete the rest?";
-                        confirmDialog.confirmed.disconnect(confirmDialog.confirmed)
-                        confirmDialog.confirmed.connect(() => {
-                            root.keepOnlySelectionRequested()
-                            root.clearSelectionRequested()
-                            root.pointsModel.selectionActive = false
-                        })
                         confirmDialog.open()
                     }
                 }
-            }
-        }
-
-        Rectangle {
-            Layout.fillWidth: true; implicitHeight: 26
-            visible: root.pointsModel.selectionActive
-            color: Qt.rgba(0.22, 0.55, 1.0, 0.12)
-
-            Label {
-                anchors.centerIn: parent
-                text: root.pointsModel.count + " of "
-                    + root.pointsModel.totalCount + " points in selection"
-                font.pointSize: 8
-                color: Qt.rgba(0.15, 0.40, 0.85, 1.0)
             }
         }
 
@@ -134,10 +120,10 @@ Rectangle {
             RowLayout {
                 anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8; spacing: 0
 
-                Label { text: "#";   color: colorPallete.mid; font.pointSize: 8; Layout.preferredWidth: 34 }
-                Label { text: "X";   color: colorPallete.mid; font.pointSize: 8; Layout.fillWidth: true }
-                Label { text: "Y";   color: colorPallete.mid; font.pointSize: 8; Layout.fillWidth: true }
-                Label { text: "Δy (residual)"; color: colorPallete.mid; font.pointSize: 8; Layout.preferredWidth: 90 }
+                Label { text: "#";   color: colorPallete.text; font.pointSize: 8; Layout.preferredWidth: 34 }
+                Label { text: "X";   color: colorPallete.text; font.pointSize: 8; Layout.fillWidth: true }
+                Label { text: "Y";   color: colorPallete.text; font.pointSize: 8; Layout.fillWidth: true }
+                Label { text: "Δy (residual)"; color: colorPallete.text; font.pointSize: 8; Layout.preferredWidth: 90 }
                 Item  { Layout.preferredWidth: 32 }
             }
         }

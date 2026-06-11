@@ -15,6 +15,10 @@ Item {
         source: "qrc:/icons/RobotoSerif-VariableFont_GRAD,opsz,wdth,wght.ttf"
     }
 
+    ColorGroup {
+        id: colorGroup
+    }
+
     ScrollView {
         id: scrollView
         anchors.fill: parent
@@ -33,7 +37,7 @@ Item {
                     text: "A = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -48,7 +52,7 @@ Item {
                     text: "B = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -65,7 +69,7 @@ Item {
                     text: "Aᵀ = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -82,7 +86,7 @@ Item {
                     text: "AᵀA = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -99,7 +103,7 @@ Item {
                     text: "(AᵀA)⁻¹ = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -114,7 +118,7 @@ Item {
                     text: "AᵀB = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {
@@ -128,7 +132,7 @@ Item {
 
             Rectangle {
                 implicitHeight: 1
-                color: "black"
+                color: colorGroup.text
                 Layout.fillWidth: true
             }
 
@@ -137,7 +141,7 @@ Item {
                     text: "(AᵀA)⁻¹AᵀB = "
                     font.family: robotoSerif.name
                     Layout.alignment: Qt.AlignVCenter
-                    color: "black"
+                    color: colorGroup.text
                 }
 
                 Matrix {

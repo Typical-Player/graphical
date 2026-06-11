@@ -6,12 +6,18 @@ import graphical
 Item {
     id: root
 
+    ColorGroup {
+        id: colorGroup
+    }
+
     property int visibleRows: 4
     property int visibleColumns: 4
     property real sizeFactor: 1.0
 
     property bool isCompressed: true
     property var matrixData: [[]]
+    property color matrixColor: colorGroup.text
+    property color matrixLinesColor: root.matrixColor
 
     readonly property int cellH: Math.round(28 * sizeFactor)
     readonly property int dotColW: Math.round(28 * sizeFactor)
@@ -120,7 +126,7 @@ Item {
 
         ShapePath {
             strokeWidth: Math.max(1, Math.round(2 * root.sizeFactor))
-            strokeColor: "black"
+            strokeColor: root.matrixLinesColor
 
             capStyle: ShapePath.FlatCap
             joinStyle: ShapePath.MiterJoin
@@ -145,7 +151,7 @@ Item {
 
         ShapePath {
             strokeWidth: Math.max(1, Math.round(2 * root.sizeFactor))
-            strokeColor: "black"
+            strokeColor: root.matrixLinesColor
             capStyle: ShapePath.FlatCap
             joinStyle: ShapePath.MiterJoin
             pathHints: ShapePath.PathLinear
@@ -197,7 +203,7 @@ Item {
                     anchors.centerIn: parent
                     font.family: "monospace"
                     font.pixelSize: Math.round(13 * root.sizeFactor)
-                    color: "black"
+                    color: root.matrixColor
 
                     text: {
                         if (cellItemDelegate.isEllipsisRow && cellItemDelegate.isEllipsisCol)

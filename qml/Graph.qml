@@ -26,6 +26,14 @@ Rectangle {
     readonly property ValueAxis xAxis: xA
     readonly property ValueAxis yAxis: yA
 
+    property bool forceTouchInput: false
+
+    readonly property bool _hasTouchInput:
+        Qt.platform.os === "android" ||
+        Qt.platform.os === "ios"     ||
+        (Qt.platform.os === "wasm" && root.width <= 900) ||
+        root.forceTouchInput
+
     signal selectionCommitted(rect dataRect)
     signal selectionCleared
 
@@ -85,8 +93,8 @@ Rectangle {
 
     onShowBestFitChanged: {
         if (root.showBestFit) {
-            if (!view.hasSeries(root.mainDisplay.fit))
-                view.addSeries(root.mainDisplay.fit);
+            if (!view.hasSeries(root.mainDisplay.fitSeries))
+                view.addSeries(root.mainDisplay.fitSeries);
 
             if (!view.hasSeries(root.mainDisplay.residualSeries))
                 view.addSeries(root.mainDisplay.residualSeries);
@@ -284,6 +292,7 @@ Rectangle {
         xAxis: xA
         yAxis: yA
         touchMode: root.touchMode
+        hasTouchInput: root._hasTouchInput
     }
 
     Rectangle {

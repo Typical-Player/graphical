@@ -37,6 +37,8 @@ ToolBar {
 
     readonly property bool selectionToggle: selectionModeBtn.checked
 
+    readonly property bool touchModeToggle: forceTouchToggle.checked
+
     property bool leftSidebarActive: leftSidebarToggle.checked
 
     property bool rightSidebarActive: rightSidebarToggle.checked
@@ -74,6 +76,7 @@ ToolBar {
     logoClicked
         signal
     recenterClicked
+
     signal clearRequested()
 
     Flickable {
@@ -195,6 +198,16 @@ ToolBar {
                 icon.color: colorPallete.text
             }
 
+            ToolButton {
+                id: forceTouchToggle
+
+                checkable: true
+                checked: false
+
+                icon.source: "qrc:/icons/touch.svg"
+                icon.color: colorPallete.text
+            }
+
             ToolSeparator {
                 visible: root.mobile
             }
@@ -305,7 +318,9 @@ ToolBar {
             Image {
                 id: logo
 
-                source: "qrc:/icons/logo.svg"
+                source: (Application.styleHints.colorScheme === Qt.Dark)
+                    ? "qrc:/icons/logo_light.svg"
+                    : "qrc:/icons/logo.svg"
 
                 Layout.minimumWidth: root.mobile ? 28 : 36
                 Layout.minimumHeight: root.mobile ? 28 : 36
