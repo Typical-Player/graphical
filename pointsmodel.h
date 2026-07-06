@@ -68,6 +68,10 @@ public slots:
 
     Q_INVOKABLE [[nodiscard]] QPointF pointAt(int visualRow) const;
 
+    Q_INVOKABLE void exportToFile() const;
+
+    Q_INVOKABLE void importFromFile();
+
 signals:
     void sourceChanged();
 
@@ -80,6 +84,10 @@ signals:
     void selectionActiveChanged();
 
     void selectionRectChanged();
+
+    void importSucceeded();
+
+    void importFailed(const QString &reason);
 
 private slots:
     void onPointsChanged(); // was onBackendDataChanged

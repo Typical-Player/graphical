@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(graphical VERSION 1.0 LANGUAGES CXX)
+project(graphical VERSION 1.2 LANGUAGES CXX)
 
 set(APP_NAME "${PROJECT_NAME}")
 set(APP_VERSION "${PROJECT_VERSION}")
@@ -19,7 +19,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Graphs Svg)
+find_package(Qt6 REQUIRED COMPONENTS Quick Graphs Svg Widgets)
 
 qt_standard_project_setup(REQUIRES 6.10)
 qt_policy(SET QTP0004 NEW)
@@ -89,6 +89,7 @@ target_link_libraries(appgraphical
         PRIVATE Qt6::Quick
         PRIVATE Qt6::Graphs
         PRIVATE Qt6::Svg
+        PRIVATE Qt6::Widgets
 )
 
 install(TARGETS appgraphical

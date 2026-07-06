@@ -1,14 +1,11 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
-
 #include "AppConfig.h"
 
 int main(int argc, char* argv[]) {
-    QGuiApplication app(argc, argv);
-
-    QGuiApplication::setApplicationName(APP_NAME);
-    QGuiApplication::setApplicationVersion(APP_VERSION);
-
+    QApplication app(argc, argv);
+    QApplication::setApplicationName(APP_NAME);
+    QApplication::setApplicationVersion(APP_VERSION);
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
@@ -17,6 +14,5 @@ int main(int argc, char* argv[]) {
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
     engine.loadFromModule("graphical", "Main");
-
     return QCoreApplication::exec();
 }

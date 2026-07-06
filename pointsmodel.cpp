@@ -1,5 +1,8 @@
 #include "pointsmodel.h"
 #include <limits>
+#include <QFileDialog>
+#include <QByteArray>
+#include <QTextStream>
 
 PointsModel::PointsModel(QObject *parent) : QAbstractListModel(parent) {
 }
@@ -203,4 +206,64 @@ void PointsModel::rebuildFilter() {
 
 int PointsModel::resolveRow(const int visualRow) const {
     return _selectionActive ? _filteredIndices.at(visualRow) : visualRow;
+}
+
+void PointsModel::exportToFile() const
+{
+    QByteArray data;
+    QTextStream out(&data);
+    for (const auto &pt : _points)
+        out << pt.x() << ',' << pt.y() << '\n';
+
+    QFileDialog::saveFileContent(data, "points.txt");
+}
+
+void PointsModel::importFromFile()
+{
+    QFileDialog::getOpenFileContent(
+        "Text files (*.txt)",
+        [this](const QString &fileName, const QByteArray &fileContent) {
+            if (fileName.isEmpty()) {
+                return; // user cancelled
+            }
+
+            QVector<QPair<double, double>> parsed;
+            const QStringList lines = QString::fromUtf8(fileContent).split('\n');
+
+            for (const QString &rawLine : lines) {
+                const QString line = rawLine.trimmed();
+                if (line.isEmpty())
+                    continue;
+
+                const QStringList parts = line.split(',');
+                if (parts.size() != 2) {
+                    emit importFailed("Malformed line: " + line);
+                    return;
+                }
+
+                bool okX = false, okY = false;
+                const double x = parts[0].trimmed().toDouble(&okX);
+                const double y = parts[1].trimmed().toDouble(&okY);
+                if (!okX || !okY) {
+                    emit importFailed("Invalid number on line: " + line);
+                    return;
+                }
+
+                parsed.append({x, y});
+            }
+
+            if (!_source) {
+                emit importFailed("No source model attached.");
+                return;
+            }
+
+
+            while (rowCount() > 0)
+                removePoint(0);
+
+            for (const auto &p : parsed)
+                appendPoint(p.first, p.second);
+
+            emit importSucceeded();
+        });
 }
