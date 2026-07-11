@@ -18,7 +18,7 @@ jobs:
           version: "6.11.1"
           host: all_os
           target: wasm
-          arch: wasm_singlethread
+          arch: wasm_multithread
           modules: 'qtshadertools qtgraphs qtquick3d'
           cache: true
 
@@ -54,8 +54,35 @@ jobs:
               mv "$f" "${f%.br}"
           done
 
+      - name: Stage files
+        run: |
+            mkdir -p deploy
+            cp build/appgraphical.html deploy/
+            cp build/qtloader.js deploy/
+            cp build/appgraphical.js deploy/
+            cp build/appgraphical.wasm deploy/
+            cat > deploy/_headers << 'EOF'
+            /appgraphical.wasm
+            Content-Type: application/wasm
+            Content-Encoding: br
+            Cross-Origin-Opener-Policy: same-origin
+            Cross-Origin-Embedder-Policy: require-corp
+
+            /*
+            cross-origin-opener-policy: same-origin
+            cross-origin-embedder-policy: require-corp
+            EOF
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: wasm-build
-          path: build/
+          path: deploy/
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloduflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOEKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: appgraphical
+          directory: deploy
