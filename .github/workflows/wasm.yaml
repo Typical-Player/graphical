@@ -19,7 +19,7 @@ jobs:
           host: all_os
           target: wasm
           arch: wasm_singlethread
-          modules: 'qtgraphs qtquick3d'
+          modules: 'qtshadertools qtgraphs qtquick3d'
           cache: true
 
       - name: Install dependencies
