@@ -25,11 +25,13 @@ jobs:
           sudo apt-get install -y ninja-build brotli
       - name: Configure
         run: |
-          qt-cmake \
+          cmake \
             -S . \
             -B build \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$QT_ROOT_DIR/lib/cmak/qt.toolchain.cmake"
+
       - name: Build
         run: |
           cmake --build build --parallel
