@@ -30,7 +30,7 @@ jobs:
             -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="$QT_ROOT_DIR/lib/cmake/qt.toolchain.cmake"
+            -DCMAKE_TOOLCHAIN_FILE="$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake"
 
       - name: Build
         run: |
