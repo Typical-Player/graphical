@@ -80,7 +80,7 @@ jobs:
           path: deploy/
 
       - name: Deploy to Cloudflare Pages
-        uses: cloduflare/pages-action@v1
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOEKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
