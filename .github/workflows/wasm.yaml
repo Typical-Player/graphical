@@ -1,34 +1,28 @@
 name: WASM Build
-
 on:
   push:
     branches: [ master ]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.10.0"
-          target: desktop
+          host: all_os
+          target: wasm
           arch: wasm_singlethread
           cache: true
-
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build brotli
-
       - name: Configure
         run: |
           qt-cmake \
@@ -36,11 +30,9 @@ jobs:
             -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release
-
       - name: Build
         run: |
           cmake --build build --parallel
-
       - name: Compress wasm
         working-directory: build
         run: |
@@ -48,7 +40,6 @@ jobs:
           for f in *.wasm.br; do
               mv "$f" "${f%.br}"
           done
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
