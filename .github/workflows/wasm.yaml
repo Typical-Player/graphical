@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -18,7 +19,9 @@ jobs:
           host: all_os
           target: wasm
           arch: wasm_singlethread
+          modules: 'qtgraphs'
           cache: true
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -42,6 +45,7 @@ jobs:
       - name: Build
         run: |
           cmake --build build --parallel
+
       - name: Compress wasm
         working-directory: build
         run: |
@@ -49,6 +53,7 @@ jobs:
           for f in *.wasm.br; do
               mv "$f" "${f%.br}"
           done
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
