@@ -1,9 +1,9 @@
 name: Build and Deploy WASM Build
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 permissions: {}
 jobs:
@@ -89,4 +89,4 @@ jobs:
           cloudflare-project-name: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           directory: deploy
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-environment: ${{ (github.ref == 'refs/heads/master' && 'Cloudflare deploy') || 'Production' }}
+          github-environment: ${{ (github.ref == 'refs/heads/main' && 'Cloudflare deploy') || 'Preview' }}
