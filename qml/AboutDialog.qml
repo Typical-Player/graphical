@@ -59,6 +59,13 @@ Item {
 			font.bold: true
 		}
 
+		//? https://stackoverflow.com/questions/12536416/qml-text-element-hyperlink
+		Text {
+			text: '<html><style type="text/css"></style><a href="https://github.com/Typical-Player/graphical">Source code</a></html>'
+			font.family: "monospace"
+			onLinkActivated: Qt.openUrlExternally("https://github.com/Typical-Player/graphical")
+		}
+
 		Label {
 			text: ["Cristofer Moises Apaza Chapa",
 				"Bismarck Aquino Juan Diego",

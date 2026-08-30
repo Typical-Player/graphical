@@ -80,8 +80,8 @@ ApplicationWindow {
 
     GraphicalDialog {
         id: aboutDialog
-        width: 500
-        height: 380
+        width: 550
+        height: 400
 
         Loader {
             active: aboutDialog.enabled
