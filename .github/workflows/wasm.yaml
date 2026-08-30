@@ -69,6 +69,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: Cloudflare deploy
     permissions:
       actions: read
       contents: read
@@ -88,4 +89,4 @@ jobs:
           cloudflare-project-name: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           directory: deploy
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-environment: ${{ (github.ref == 'refs/heads/main' && 'Cloudflare deploy') || 'preview' }}
+          github-environment: ${{ (github.ref == 'refs/heads/master' && 'Cloudflare deploy') || 'preview' }}
