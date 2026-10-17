@@ -46,7 +46,7 @@ jobs:
       - name: Stage files
         run: |
           mkdir -p deploy
-          cp build/appgraphical.html deploy/
+          cp build/appgraphical.html deploy/index.html
           cp build/qtloader.js deploy/
           cp build/appgraphical.js deploy/
           cp build/appgraphical.wasm deploy/
