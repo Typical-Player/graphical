@@ -1,6 +1,6 @@
 # Graphical
 Simple Qt QML 6 application for line fitting. Supporting simple linear regression, quadratic regression and exponential regresion.
-#### Try it live at https://graphical-web.pages.dev/appgraphical
+#### Try it live at https://graphical-web.pages.dev/
 
 ![Graphical demo](images/Example.png)
 
