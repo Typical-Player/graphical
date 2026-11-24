@@ -214,6 +214,7 @@ void PointsModel::exportToFile() const
     QTextStream out(&data);
     for (const auto &pt : _points)
         out << pt.x() << ',' << pt.y() << '\n';
+    out.flush();
 
     QFileDialog::saveFileContent(data, "points.txt");
 }
